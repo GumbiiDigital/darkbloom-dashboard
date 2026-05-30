@@ -1,0 +1,60 @@
+{
+  "originHash" : "9006f71aa2cb2494d6304361581e4a2d8d5b6bd27418981183389dafc255b859",
+  "pins" : [
+    {
+      "identity" : "fivekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/FiveSheepCo/FiveKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "17992c8ce69169efd89cda1ec123faa60af6c907"
+      }
+    },
+    {
+      "identity" : "foundationplus",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/FiveSheepCo/FoundationPlus.git",
+      "state" : {
+        "revision" : "108c3b4218a02bf0d30f6e515d7feeee37513787",
+        "version" : "1.0.6"
+      }
+    },
+    {
+      "identity" : "openai",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MacPaw/OpenAI.git",
+      "state" : {
+        "revision" : "397a601acc6592f0005155a46dc1c5068e92a76d",
+        "version" : "0.4.9"
+      }
+    },
+    {
+      "identity" : "swift-http-types",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-http-types",
+      "state" : {
+        "revision" : "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
+        "version" : "1.5.1"
+      }
+    },
+    {
+      "identity" : "swift-openapi-runtime",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-openapi-runtime",
+      "state" : {
+        "revision" : "3d3a8457661daf7fb260ceeb9f0e24e5204ba5fb",
+        "version" : "1.12.0"
+      }
+    },
+    {
+      "identity" : "swiftuielements",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/FiveSheepCo/SwiftUIElements.git",
+      "state" : {
+        "revision" : "a41a1f31689b8220f1965ed64097b8a61c6e7e81",
+        "version" : "1.1.3"
+      }
+    }
+  ],
+  "version" : 3
+}
