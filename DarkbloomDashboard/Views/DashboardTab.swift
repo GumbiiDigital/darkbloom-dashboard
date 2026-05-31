@@ -16,21 +16,24 @@ struct DashboardTab: View {
         Form {
             Section {
                 LabeledContent {
-                    if apiKeyLocked {
-                        Text("Hidden")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        SecureField("API Key", text: $settings.apiKey ?? "")
-                            .labelsHidden()
-                    }
-                    
-                    Button {
-                        apiKeyLocked.toggle()
-                    } label: {
+                    HStack(alignment: .firstTextBaseline) {
                         if apiKeyLocked {
-                            Text("Edit")
+                            Text("Hidden")
+                                .foregroundStyle(.secondary)
                         } else {
-                            Text("Save")
+                            SecureField("API Key", text: $settings.apiKey ?? "")
+                                .textFieldStyle(.roundedBorder)
+                                .labelsHidden()
+                        }
+                        
+                        Button {
+                            apiKeyLocked.toggle()
+                        } label: {
+                            if apiKeyLocked {
+                                Text("Edit")
+                            } else {
+                                Text("Save")
+                            }
                         }
                     }
                 } label: {

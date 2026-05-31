@@ -25,7 +25,11 @@ struct MachineDetailTab: View {
                     }
                 }
                 HardwareSection(providerAttestation: providerAttestation)
-                TrustSection(providerAttestation: providerAttestation)
+                #if os(macOS)
+                TrustSection(providerAttestation: providerAttestation, showAll: true)
+                #else
+                TrustSection(providerAttestation: providerAttestation, showAll: false)
+                #endif
                 if let providerStats = providerStats(for: providerAttestation.providerId) {
                     NetworkSection(providerAttestation: providerAttestation, providerStats: providerStats)
                 }
@@ -70,6 +74,7 @@ extension MachineDetailTab {
     
     struct TrustSection: View {
         let providerAttestation: DarkbloomProviderAttestation
+        let showAll: Bool
         
         var body: some View {
             Section {
@@ -78,35 +83,47 @@ extension MachineDetailTab {
                 } label: {
                     Text("Trust Level")
                 }
-                LabeledContent {
-                    Text(providerAttestation.mdaVerified ? "Yes" : "No")
-                } label: {
-                    Text("Mobile Device Attestation (MDA)")
+                if showAll || !providerAttestation.mdaVerified {
+                    LabeledContent {
+                        Text(providerAttestation.mdaVerified ? "Yes" : "No")
+                    } label: {
+                        Text("Mobile Device Attestation (MDA)")
+                    }
                 }
-                LabeledContent {
-                    Text(providerAttestation.mdmVerified ? "Yes" : "No")
-                } label: {
-                    Text("Mobile Device Management (MDM)")
+                if showAll || !providerAttestation.mdmVerified {
+                    LabeledContent {
+                        Text(providerAttestation.mdmVerified ? "Yes" : "No")
+                    } label: {
+                        Text("Mobile Device Management (MDM)")
+                    }
                 }
-                LabeledContent {
-                    Text(providerAttestation.authenticatedRootEnabled ? "Yes" : "No")
-                } label: {
-                    Text("Authenticated Root")
+                if showAll || !providerAttestation.authenticatedRootEnabled {
+                    LabeledContent {
+                        Text(providerAttestation.authenticatedRootEnabled ? "Yes" : "No")
+                    } label: {
+                        Text("Authenticated Root")
+                    }
                 }
-                LabeledContent {
-                    Text(providerAttestation.sipEnabled ? "Yes" : "No")
-                } label: {
-                    Text("System Integrity Protection")
+                if showAll || !providerAttestation.sipEnabled {
+                    LabeledContent {
+                        Text(providerAttestation.sipEnabled ? "Yes" : "No")
+                    } label: {
+                        Text("System Integrity Protection")
+                    }
                 }
-                LabeledContent {
-                    Text(providerAttestation.secureBootEnabled ? "Yes" : "No")
-                } label: {
-                    Text("Secure Boot")
+                if showAll || !providerAttestation.secureBootEnabled {
+                    LabeledContent {
+                        Text(providerAttestation.secureBootEnabled ? "Yes" : "No")
+                    } label: {
+                        Text("Secure Boot")
+                    }
                 }
-                LabeledContent {
-                    Text(providerAttestation.secureEnclave ? "Yes" : "No")
-                } label: {
-                    Text("Secure Enclave")
+                if showAll || !providerAttestation.secureEnclave {
+                    LabeledContent {
+                        Text(providerAttestation.secureEnclave ? "Yes" : "No")
+                    } label: {
+                        Text("Secure Enclave")
+                    }
                 }
             } header: {
                 HStack {
