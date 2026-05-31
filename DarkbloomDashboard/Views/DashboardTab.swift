@@ -5,7 +5,7 @@ import OpenAI
 struct DashboardTab: View {
     @AppStorage("darkbloom_api_key_locked") private var apiKeyLocked: Bool = false
     
-    @State private var viewModel = ContentViewModel()
+    @Environment(ContentViewModel.self) private var viewModel
     
     @State private var showAddMachineAlert: Bool = false
     @State private var newMachineSerialNumber: String = ""
@@ -119,14 +119,6 @@ struct DashboardTab: View {
             }
         }
         .formStyle(.grouped)
-        .task(id: settings.apiKey) {
-            guard let apiKey = settings.apiKey else { return }
-            do {
-                try await viewModel.update(apiKey: apiKey)
-            } catch {
-                print(error)
-            }
-        }
         .alert("Add Machine", isPresented: $showAddMachineAlert) {
             TextField("Serial Number", text: $newMachineSerialNumber)
             
@@ -213,4 +205,5 @@ struct MachineInfoView: View {
 
 #Preview {
     DashboardTab()
+        .environment(ContentViewModel())
 }

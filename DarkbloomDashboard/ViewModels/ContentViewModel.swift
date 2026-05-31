@@ -10,6 +10,14 @@ final class ContentViewModel {
     private(set) var stats: DarkbloomStats?
     private(set) var attestations: DarkbloomAttestations?
     
+    init() {
+        if let apiKey = Settings.shared.apiKey {
+            Task {
+                try? await self.update(apiKey: apiKey)
+            }
+        }
+    }
+    
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         

@@ -42,7 +42,13 @@ struct DarkbloomStats: Decodable {
     let providers: [DarkbloomProviderStat]
 }
 
-struct DarkbloomProviderStat: Decodable {
+struct CPUCoreInfo: Decodable, Equatable {
+    let total: Int
+    let performance: Int
+    let efficiency: Int
+}
+
+struct DarkbloomProviderStat: Decodable, Equatable {
     let id: String
     let attested: Bool
     let chip: String
@@ -50,6 +56,17 @@ struct DarkbloomProviderStat: Decodable {
     let status: DarkbloomProviderStatus
     let trustLevel: DarkbloomProviderTrustLevel
     let runtimeVerified: Bool
+    
+    let cpuCores: CPUCoreInfo
+    let gpuCores: Int
+    
+    let memoryGb: Int
+    let memoryBandwidthGbs: Int
+    
+    let requestsServed: Int
+    let tokensGenerated: Int
+    
+    let failedChallenges: Int
     
     var isTrusted: Bool {
         trustLevel == .hardware && status != .untrusted
@@ -60,7 +77,7 @@ struct DarkbloomAttestations: Decodable {
     let providers: [DarkbloomProviderAttestation]
 }
 
-struct DarkbloomProviderAttestation: Decodable {
+struct DarkbloomProviderAttestation: Decodable, Equatable {
     let acmeVerified: Bool
     let authenticatedRootEnabled: Bool
     let chipName: String
@@ -95,10 +112,26 @@ enum DarkbloomProviderStatus: String, Decodable, Equatable {
     case online = "online"
     case serving = "serving"
     case untrusted = "untrusted"
+    
+    var displayName: String {
+        switch self {
+            case .online: "Online"
+            case .serving: "Serving"
+            case .untrusted: "Untrusted"
+        }
+    }
 }
 
 enum DarkbloomProviderTrustLevel: String, Decodable, Equatable {
     case hardware = "hardware"
     case selfSigned = "self_signed"
     case none = "none"
+    
+    var displayName: String {
+        switch self {
+            case .hardware: "Hardware"
+            case .selfSigned: "Self-Signed"
+            case .none: "None"
+        }
+    }
 }

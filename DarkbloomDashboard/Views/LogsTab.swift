@@ -33,6 +33,9 @@ struct LogsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            viewModel.unseenLogCount = 0
+        }
     }
 }
 

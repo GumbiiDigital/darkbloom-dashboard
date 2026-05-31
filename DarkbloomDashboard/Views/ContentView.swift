@@ -39,26 +39,36 @@ enum SidebarTab: Hashable, Identifiable {
 
 struct SidebarLink: View {
     let value: SidebarTab
+    let badge: Int?
+    
+    init(value: SidebarTab, badge: Int? = nil) {
+        self.value = value
+        self.badge = badge
+    }
     
     var body: some View {
         NavigationLink(value: value) {
             Label(value.title, systemImage: value.systemImage)
+                .badge(badge ?? 0)
+                .badgeProminence(.increased)
         }
     }
 }
 
 struct ContentView: View {
-    @State private var activeTab: SidebarTab = .overview
-    
+    @State private var contentViewModel = ContentViewModel()
     @State private var logsViewModel = LogsViewModel()
+    
+    @Bindable private var navigation = NavigationViewModel.shared
+    private let settings = Settings.shared
     
     var body: some View {
         NavigationSplitView {
-            List(selection: $activeTab) {
+            List(selection: $navigation.activeTab) {
                 SidebarLink(value: .overview)
-                if !Settings.shared.trackedMachineSerialNumbers.isEmpty {
+                if !settings.trackedMachineSerialNumbers.isEmpty {
                     Section {
-                        ForEach(Settings.shared.trackedMachineSerialNumbers) { serialNo in
+                        ForEach(settings.trackedMachineSerialNumbers) { serialNo in
                             SidebarLink(value: .machine(serialNo))
                         }
                     } header: {
@@ -67,29 +77,44 @@ struct ContentView: View {
                 }
                 Section {
                     SidebarLink(value: .loadGenerator)
-                    SidebarLink(value: .logs)
+                    SidebarLink(value: .logs, badge: logsViewModel.unseenLogCount)
                 } header: {
                     Text("Utilities")
                 }
             }
         } detail: {
-            switch activeTab {
-                case .overview:
-                    DashboardTab()
-                case .machine(let serialNo):
-                    EmptyView()
-                case .loadGenerator:
-                    LoadGeneratorTab()
-                case .logs:
-                    LogsTab()
-                        .environment(logsViewModel)
+            Group {
+                switch navigation.activeTab {
+                    case .overview:
+                        DashboardTab()
+                    case .machine(let serialNo):
+                        MachineDetailTab(serialNo: serialNo)
+                    case .loadGenerator:
+                        LoadGeneratorTab()
+                    case .logs:
+                        LogsTab()
+                }
             }
+            .navigationTitle(navigation.activeTab.title)
+            .environment(navigation)
+            .environment(contentViewModel)
+            .environment(logsViewModel)
         }
         .onAppear {
             logsViewModel.startStreaming()
         }
         .onDisappear() {
             logsViewModel.stopStreaming()
+        }
+        .onChange(of: settings.apiKey) {
+            guard let apiKey = settings.apiKey else { return }
+            Task {
+                do {
+                    try await contentViewModel.update(apiKey: apiKey)
+                } catch {
+                    print(error)
+                }
+            }
         }
     }
 }

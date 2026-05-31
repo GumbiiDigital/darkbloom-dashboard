@@ -20,7 +20,9 @@ final class LogsViewModel {
     
     private(set) var logs: [DarkbloomLogEntry] = []
     private var streamTask: Task<Void, Never>?
-    private var lastFetchDate = Date.now.addingTimeInterval(-60)
+    private var lastFetchDate = Date.now
+    
+    var unseenLogCount: Int = 0
     
     init() {}
     
@@ -53,6 +55,10 @@ final class LogsViewModel {
                 }
                 
                 logs.append(contentsOf: newEntries.map(DarkbloomLogEntry.init))
+                
+                if NavigationViewModel.shared.activeTab != .logs {
+                    unseenLogCount += newEntries.count
+                }
                 
                 if logs.count > maxLogEntries {
                     logs.removeFirst(logs.count - maxLogEntries)
