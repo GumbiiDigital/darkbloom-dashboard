@@ -3,18 +3,27 @@ import SwiftData
 import FiveKit
 import OpenAI
 
-enum SidebarTab: String, CaseIterable, Hashable, Identifiable {
+enum SidebarTab: Hashable, Identifiable {
     case overview
+    case machine(String)
     case loadGenerator
     case logs
 
-    var id: String { rawValue }
+    var id: String {
+        switch self {
+            case .overview: "overview"
+            case .machine(let id): "machine-\(id)"
+            case .loadGenerator: "load-generator"
+            case .logs: "logs"
+        }
+    }
 
     var title: String {
         switch self {
             case .overview: "Overview"
+            case .machine(let id): id
             case .loadGenerator: "Load Generator"
-            case .logs: "Logs"
+            case .logs: "Log Viewer"
         }
     }
 
@@ -22,6 +31,7 @@ enum SidebarTab: String, CaseIterable, Hashable, Identifiable {
         switch self {
             case .overview: "app"
             case .loadGenerator: "bolt.fill"
+            case .machine: "macstudio"
             case .logs: "text.page"
         }
     }
@@ -46,13 +56,28 @@ struct ContentView: View {
         NavigationSplitView {
             List(selection: $activeTab) {
                 SidebarLink(value: .overview)
-                SidebarLink(value: .loadGenerator)
-                SidebarLink(value: .logs)
+                if !Settings.shared.trackedMachineSerialNumbers.isEmpty {
+                    Section {
+                        ForEach(Settings.shared.trackedMachineSerialNumbers) { serialNo in
+                            SidebarLink(value: .machine(serialNo))
+                        }
+                    } header: {
+                        Text("Machines")
+                    }
+                }
+                Section {
+                    SidebarLink(value: .loadGenerator)
+                    SidebarLink(value: .logs)
+                } header: {
+                    Text("Utilities")
+                }
             }
         } detail: {
             switch activeTab {
                 case .overview:
                     DashboardTab()
+                case .machine(let serialNo):
+                    EmptyView()
                 case .loadGenerator:
                     LoadGeneratorTab()
                 case .logs:

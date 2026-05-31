@@ -4,7 +4,6 @@ import OpenAI
 
 struct DashboardTab: View {
     @AppStorage("darkbloom_api_key_locked") private var apiKeyLocked: Bool = false
-    @AppStorage("tracked_machines") private var rawTrackedMachines: String?
     
     @State private var viewModel = ContentViewModel()
     
@@ -12,13 +11,6 @@ struct DashboardTab: View {
     @State private var newMachineSerialNumber: String = ""
     
     @Bindable private var settings = Settings.shared
-    
-    private var trackedMachines: Binding<[String]> {
-        Binding(
-            get: { rawTrackedMachines?.split(separator: ",").map(String.init) ?? [] },
-            set: { rawTrackedMachines = $0.removingDuplicates().joined(separator: ",") }
-        )
-    }
     
     var body: some View {
         Form {
@@ -74,15 +66,37 @@ struct DashboardTab: View {
             }
             
             Section {
-                ForEach(trackedMachines.wrappedValue) { serialNo in
-                    let provider = viewModel.attestations?.providers.first { $0.serialNumber == serialNo }
-                    let providerStats = provider.flatMap { provider in
-                        viewModel.stats?.providers.first { $0.id == provider.providerId }
+                if settings.trackedMachineSerialNumbers.isEmpty {
+                    Text("You haven't tracked any machines yet.")
+                } else {
+                    ForEach(settings.trackedMachineSerialNumbers) { serialNo in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(serialNo)
+                            Spacer()
+                            if let provider = viewModel.attestations?.providers.first(where: { $0.serialNumber == serialNo }) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    switch provider.isTrusted {
+                                        case true:
+                                            Text(Image(systemName: "lock.shield.fill"))
+                                            Text("Full Trust")
+                                        case false:
+                                            Text(Image(systemName: "shield.slash.fill"))
+                                            Text("Reduced Trust")
+                                    }
+                                }
+                                .foregroundStyle(provider.isTrusted ? Color.secondary : Color.yellow)
+                            }
+                        }
+                        .contentShape(.rect)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                settings.trackedMachineSerialNumbers.removeAll(subject: serialNo)
+                            }
+                        }
                     }
-                    MachineInfoView(serialNo: serialNo, provider: provider, stats: providerStats)
-                }
-                .onDelete { indexSet in
-                    trackedMachines.wrappedValue.remove(atOffsets: indexSet)
+                    .onDelete { indexSet in
+                        settings.trackedMachineSerialNumbers.remove(atOffsets: indexSet)
+                    }
                 }
             } header: {
                 HStack {
@@ -94,6 +108,14 @@ struct DashboardTab: View {
                         Text("Add Machine")
                     }
                 }
+            }
+            
+            ForEach(settings.trackedMachineSerialNumbers) { serialNo in
+                let provider = viewModel.attestations?.providers.first { $0.serialNumber == serialNo }
+                let providerStats = provider.flatMap { provider in
+                    viewModel.stats?.providers.first { $0.id == provider.providerId }
+                }
+                MachineInfoView(serialNo: serialNo, provider: provider, stats: providerStats)
             }
         }
         .formStyle(.grouped)
@@ -109,7 +131,7 @@ struct DashboardTab: View {
             TextField("Serial Number", text: $newMachineSerialNumber)
             
             Button("Save") {
-                trackedMachines.wrappedValue.append(newMachineSerialNumber)
+                settings.trackedMachineSerialNumbers.append(newMachineSerialNumber)
                 newMachineSerialNumber = ""
             }
             
@@ -126,96 +148,66 @@ struct MachineInfoView: View {
     let stats: DarkbloomProviderStat?
     
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Text(serialNo).bold()
-                Spacer()
-                if let provider {
-                    Text(provider.chipName)
-                }
-            }
-            
+        Section {
             if let provider {
-                VStack(alignment: .leading) {
-                    LabeledContent {
-                        HStack {
-                            switch provider.status {
-                                case .online:
-                                    Image(systemName: "circle.fill")
-                                        .foregroundStyle(.green)
-                                    Text("Online")
-                                case .serving:
-                                    Image(systemName: "cpu")
-                                        .foregroundStyle(.green)
-                                    Text("Serving")
-                                case .untrusted:
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .foregroundStyle(.red)
-                                    Text("Untrusted")
-                            }
+                LabeledContent {
+                    HStack(alignment: .firstTextBaseline) {
+                        switch provider.status {
+                            case .online:
+                                Text(Image(systemName: "checkmark.circle"))
+                                Text("Online")
+                            case .serving:
+                                Text(Image(systemName: "checkmark.circle.fill"))
+                                Text("Serving")
+                            case .untrusted:
+                                Text(Image(systemName: "exclamationmark.triangle"))
+                                Text("Untrusted")
                         }
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 6)
-                        .background(Color.systemFill)
-                        .clipShape(.capsule)
-                    } label: {
-                        Text("Status")
                     }
-                    
-                    LabeledContent {
-                        HStack {
-                            switch provider.trustLevel {
-                                case .hardware:
-                                    Image(systemName: "macbook.badge.shield.checkmark")
-                                        .foregroundStyle(.green)
-                                    Text("Hardware")
-                                case .selfSigned:
-                                    Image(systemName: "key.shield.fill")
-                                        .foregroundStyle(.yellow)
-                                    Text("Self-Signed")
-                                case .none:
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .foregroundStyle(.red)
-                                    Text("None")
-                            }
+                } label: {
+                    Text("Status")
+                }
+                
+                LabeledContent {
+                    HStack(alignment: .firstTextBaseline) {
+                        switch provider.trustLevel {
+                            case .hardware:
+                                Text(Image(systemName: "macbook.badge.shield.checkmark"))
+                                Text("Hardware")
+                            case .selfSigned:
+                                Text(Image(systemName: "key.shield.fill"))
+                                Text("Self-Signed")
+                            case .none:
+                                Text(Image(systemName: "exclamationmark.triangle"))
+                                Text("None")
                         }
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 6)
-                        .background(Color.systemFill)
-                        .clipShape(.capsule)
-                    } label: {
-                        Text("Trust Level")
                     }
-                    
-                    LabeledContent {
-                        HStack {
-                            switch provider.isTrusted {
-                                case true:
-                                    Image(systemName: "lock.shield.fill")
-                                        .foregroundStyle(.green)
-                                    Text("Full Trust")
-                                case false:
-                                    Image(systemName: "shield.slash.fill")
-                                        .foregroundStyle(.yellow)
-                                    Text("Reduced Trust")
-                            }
-                        }
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 6)
-                        .background(Color.systemFill)
-                        .clipShape(.capsule)
-                    } label: {
-                        Text("Trust Indicator")
-                    }
+                } label: {
+                    Text("Trust Level")
                 }
             } else {
                 Text("This machine is currently offline.")
             }
+        } header: {
+            HStack(alignment: .bottom) {
+                if let provider {
+                    switch provider.status {
+                        case .online, .serving:
+                            Text(Image(systemName: "circle.fill")).foregroundStyle(Color.green)
+                        case .untrusted:
+                            Text(Image(systemName: "circle.fill")).foregroundStyle(Color.yellow)
+                    }
+                } else {
+                    Text(Image(systemName: "circle.fill")).foregroundStyle(Color.red)
+                }
+                
+                Text(serialNo)
+                if let provider {
+                    Text(verbatim: "|")
+                    Text(provider.chipName)
+                }
+            }
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondarySystemBackground)
-        .clipShape(.rect(cornerRadius: 12))
     }
 }
 
