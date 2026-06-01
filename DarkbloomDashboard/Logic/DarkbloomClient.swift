@@ -39,4 +39,35 @@ final class DarkbloomClient {
         let url = HOST.appending(path: "payments/balance")
         return try await fetch(url)
     }
+    
+    func warmupMachine(serialNumber: String, models: [String]) async throws {
+        for model in models {
+            let url = HOST
+                .appending(path: "chat/completions")
+                .appending(queryItems: [URLQueryItem(name: "serial", value: serialNumber)])
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            req.httpBody = """
+            {
+                "model": "\(model)",
+                "messages": [
+                    { "role": "user", "content": "Hello" }
+                ],
+                "stream": false,
+                "provider_serial": "\(serialNumber)"
+            }
+            """.data(using: .utf8)
+            print("Warming up \(model) for \(serialNumber)...")
+            let (data, res) = try await URLSession.shared.data(for: req)
+            if let httpResponse = res as? HTTPURLResponse {
+                print("-> Response: HTTP \(httpResponse.statusCode)")
+            } else {
+                print("-> Error: Response is not HTTP")
+            }
+            let textData = String(data: data, encoding: .utf8)
+            print("-> Data: \(textData ?? "<not utf8>")")
+        }
+    }
 }

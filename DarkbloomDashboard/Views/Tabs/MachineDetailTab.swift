@@ -22,7 +22,7 @@ struct MachineDetailTab: View {
                 #else
                 TrustSection(trust: machine.trust, showAll: false)
                 #endif
-                NetworkSection(activity: machine.activity)
+                NetworkSection(serialNo: serialNo, activity: machine.activity)
             }
         }
         .formStyle(.grouped)
@@ -133,6 +133,10 @@ extension MachineDetailTab {
     }
     
     struct NetworkSection: View {
+        @Environment(ContentViewModel.self) private var contentViewModel
+        @State private var warmupInProgress: Bool = false
+        
+        let serialNo: String
         let activity: MachineActivityInfo
         
         var body: some View {
@@ -151,6 +155,20 @@ extension MachineDetailTab {
                 }
             } header: {
                 Text("Network")
+            } footer: {
+                HStack {
+                    Spacer()
+                    Button {
+                        warmupInProgress = true
+                        Task {
+                            try? await contentViewModel.warmup(serialNumber: serialNo)
+                            warmupInProgress = false
+                        }
+                    } label: {
+                        Text("Warmup")
+                    }
+                    .disabled(warmupInProgress)
+                }
             }
             .animation(.snappy, value: activity)
         }

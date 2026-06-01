@@ -45,6 +45,14 @@ final class ContentViewModel {
         }
     }
     
+    func warmup(serialNumber: String) async throws {
+        guard let client else { return }
+        try await client.warmupMachine(
+            serialNumber: serialNumber,
+            models: ["gpt-oss-20b", "gemma-4-26b"]
+        )
+    }
+    
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         
