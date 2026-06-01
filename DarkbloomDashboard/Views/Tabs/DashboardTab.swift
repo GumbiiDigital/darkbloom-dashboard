@@ -92,8 +92,14 @@ struct DashboardTab: View {
                         }
                         .contentShape(.rect)
                         .contextMenu {
-                            Button(role: .destructive) {
-                                settings.trackedMachineSerialNumbers.removeAll(subject: serialNo)
+                            if #available(iOS 26, macOS 26, *) {
+                                Button(role: .destructive) {
+                                    settings.trackedMachineSerialNumbers.removeAll(subject: serialNo)
+                                }
+                            } else {
+                                Button("Delete", role: .destructive) {
+                                    settings.trackedMachineSerialNumbers.removeAll(subject: serialNo)
+                                }
                             }
                         }
                     }
@@ -130,8 +136,14 @@ struct DashboardTab: View {
                 newMachineSerialNumber = ""
             }
             
-            Button(role: .cancel) {
-                newMachineSerialNumber = ""
+            if #available(iOS 26, macOS 26, *) {
+                Button(role: .cancel) {
+                    newMachineSerialNumber = ""
+                }
+            } else {
+                Button("Cancel", role: .cancel) {
+                    newMachineSerialNumber = ""
+                }
             }
         }
     }
