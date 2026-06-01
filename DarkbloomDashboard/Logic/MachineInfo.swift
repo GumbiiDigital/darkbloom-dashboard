@@ -22,6 +22,11 @@ struct MachineTrustInfo: Equatable {
     let sipEnabled: Bool
     let runtimeVerified: Bool
     
+    var isOnline: Bool {
+        let onlineStatus: Set<DarkbloomProviderStatus> = [.online, .serving]
+        return onlineStatus.contains(status)
+    }
+    
     /// Returns whether the machine is likely to be in a trusted state.
     var isTrusted: Bool {
         let trustedStatus: Set<DarkbloomProviderStatus> = [.online, .serving]

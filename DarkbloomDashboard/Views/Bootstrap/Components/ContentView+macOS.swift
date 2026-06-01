@@ -16,7 +16,7 @@ struct ContentView_macOS: View {
                 if !settings.trackedMachineSerialNumbers.isEmpty {
                     Section {
                         ForEach(settings.trackedMachineSerialNumbers) { serialNo in
-                            SidebarLink(value: .machine(serialNo))
+                            SidebarMachineLink(serialNo: serialNo)
                         }
                     } header: {
                         Text("Machines")
