@@ -56,7 +56,7 @@ final class LogsViewModel {
                 
                 logs.append(contentsOf: newEntries.map(DarkbloomLogEntry.init))
                 
-                if NavigationViewModel.shared.activeTab != .logs {
+                if NavigationController.shared.activeTab != .logs {
                     unseenLogCount += newEntries.count
                 }
                 

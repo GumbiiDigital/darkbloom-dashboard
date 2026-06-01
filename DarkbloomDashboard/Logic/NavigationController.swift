@@ -1,8 +1,8 @@
 import Foundation
 
 @MainActor @Observable
-final class NavigationViewModel {
-    static let shared = NavigationViewModel()
+final class NavigationController {
+    static let shared = NavigationController()
     
     var activeTab: SidebarTab = .overview
     

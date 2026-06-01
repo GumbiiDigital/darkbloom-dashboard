@@ -6,9 +6,11 @@ final class ContentViewModel {
     
     private var statsTask: Task<Void, any Error>?
     private var attestationsTask: Task<Void, any Error>?
+    private var balanceTask: Task<Void, any Error>?
     
     private(set) var stats: DarkbloomStats?
     private(set) var attestations: DarkbloomAttestations?
+    private(set) var balance: DarkbloomBalance?
     
     init() {
         if let apiKey = Settings.shared.apiKey {
@@ -23,6 +25,7 @@ final class ContentViewModel {
         
         try await self.refreshStats()
         try await self.refreshAttestations()
+        try await self.refreshBalance()
         
         self.statsTask?.cancel()
         self.statsTask = Task {
@@ -39,6 +42,14 @@ final class ContentViewModel {
                 try await self.refreshAttestations()
             }
         }
+        
+        self.balanceTask?.cancel()
+        self.balanceTask = Task {
+            while !Task.isCancelled {
+                try await Task.sleep(for: .seconds(60))
+                try await self.refreshBalance()
+            }
+        }
     }
     
     private func refreshStats() async throws {
@@ -47,6 +58,10 @@ final class ContentViewModel {
     
     private func refreshAttestations() async throws {
         self.attestations = try await client?.attestations()
+    }
+    
+    private func refreshBalance() async throws {
+        self.balance = try await client?.balance()
     }
     
     var routableProviderCount: Int? {
