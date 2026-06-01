@@ -39,6 +39,7 @@ struct ContentView_iOS: View {
                 }
             }
         }
+        .tabViewStyle(.sidebarAdaptable)
     }
 }
 
