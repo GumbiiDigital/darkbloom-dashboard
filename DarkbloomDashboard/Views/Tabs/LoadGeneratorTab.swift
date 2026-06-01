@@ -2,7 +2,7 @@ import SwiftUI
 import FiveKit
 
 struct LoadGeneratorTab: View {
-    @State private var loadTest = LoadTestingViewModel()
+    @Environment(LoadTestingViewModel.self) private var loadTest
     
     @State private var showApiKeyPrompt: Bool = false
     @State private var newApiKey: String = ""
@@ -19,6 +19,8 @@ struct LoadGeneratorTab: View {
     }
     
     var body: some View {
+        @Bindable var loadTest = self.loadTest
+        
         Form {
             Section {
                 ForEach(settings.loadTestingApiKeys, id: \.self) { apiKey in
@@ -139,4 +141,5 @@ struct LoadGeneratorTab: View {
 
 #Preview {
     LoadGeneratorTab()
+        .environment(LoadTestingViewModel())
 }

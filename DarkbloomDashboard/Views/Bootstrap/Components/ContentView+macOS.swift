@@ -23,7 +23,7 @@ struct ContentView_macOS: View {
                     }
                 }
                 Section {
-                    SidebarLink(value: .loadGenerator)
+                    SidebarLoadTestingLink()
                     SidebarLink(value: .logs, badge: logsViewModel.unseenLogCount)
                 } header: {
                     Text("Utilities")

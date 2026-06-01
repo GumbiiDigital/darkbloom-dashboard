@@ -4,25 +4,29 @@ import SwiftData
 struct ContentView: View {
     @State private var contentViewModel = ContentViewModel()
     @State private var earningsViewModel = EarningsViewModel()
+    @State private var loadTestingViewModel = LoadTestingViewModel()
     @State private var logsViewModel = LogsViewModel()
     
     private let settings = Settings.shared
     
     @ViewBuilder private var platformContent: some View {
-        #if os(macOS)
-        ContentView_macOS()
-        #elseif os(iOS)
-        ContentView_iOS()
-        #else
-        #error("Unsupported platform.")
-        #endif
+        Group {
+            #if os(macOS)
+            ContentView_macOS()
+                .environment(loadTestingViewModel)
+                .environment(logsViewModel)
+            #elseif os(iOS)
+            ContentView_iOS()
+            #else
+            #error("Unsupported platform.")
+            #endif
+        }
+        .environment(contentViewModel)
+        .environment(earningsViewModel)
     }
     
     var body: some View {
         platformContent
-            .environment(contentViewModel)
-            .environment(earningsViewModel)
-            .environment(logsViewModel)
             .onChange(of: contentViewModel.balanceChanges) {
                 earningsViewModel.calculateProjections(basedOn: contentViewModel.balanceChanges)
             }
