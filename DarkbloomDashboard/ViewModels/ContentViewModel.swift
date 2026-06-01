@@ -30,31 +30,15 @@ final class ContentViewModel {
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         
-        do {
-            try await self.refreshStats()
-        } catch {
-            print(error)
-        }
-        do {
-            try await self.refreshAttestations()
-        } catch {
-            print(error)
-        }
-        do {
-            try await self.refreshBalance()
-        } catch {
-            print(error)
-        }
+        try? await self.refreshStats()
+        try? await self.refreshAttestations()
+        try? await self.refreshBalance()
         
         self.statsTask?.cancel()
         self.statsTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                do {
-                    try await self.refreshStats()
-                } catch {
-                    print(error)
-                }
+                try? await self.refreshStats()
             }
         }
         
@@ -62,11 +46,7 @@ final class ContentViewModel {
         self.attestationsTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                do {
-                    try await self.refreshAttestations()
-                } catch {
-                    print(error)
-                }
+                try? await self.refreshAttestations()
             }
         }
         
@@ -74,26 +54,41 @@ final class ContentViewModel {
         self.balanceTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                do {
-                    try await self.refreshBalance()
-                } catch {
-                    print(error)
-                }
+                try? await self.refreshBalance()
             }
         }
     }
     
     private func refreshStats() async throws {
-        self.stats = try await client?.stats()
+        do {
+            self.stats = try await client?.stats()
+        } catch {
+            print(error)
+            throw error
+        }
     }
     
     private func refreshAttestations() async throws {
-        self.attestations = try await client?.attestations()
+        do {
+            self.attestations = try await client?.attestations()
+        } catch {
+            print(error)
+            throw error
+        }
+    }
+    
+    private func fetchBalance() async throws -> DarkbloomBalance? {
+        do {
+            return try await client?.balance()
+        } catch {
+            print(error)
+            throw error
+        }
     }
     
     private func refreshBalance() async throws {
         let date = Date.now
-        guard let currentBalance = try await client?.balance() else { return }
+        guard let currentBalance = try await self.fetchBalance() else { return }
         if let previousBalance = self.balance {
             let microUsdDiff = max(0, currentBalance.balanceMicroUsd - previousBalance.balanceMicroUsd)
             let diff = Double(microUsdDiff) / 1_000_000.0

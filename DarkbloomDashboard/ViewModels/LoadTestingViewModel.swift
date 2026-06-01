@@ -9,6 +9,7 @@ final class LoadTestingViewModel {
     private(set) var requestsInFlight: Int = 0
     private(set) var requestsFailed: Int = 0
     
+    let maxInFlight: Int = 3
     var requestsToSend: Int = 20
     var responses: [ChatResult] = []
     
@@ -31,11 +32,17 @@ final class LoadTestingViewModel {
         await withTaskGroup(of: ChatResult?.self) { group in
             for i in 0..<requestsToSend {
                 group.addTask {
-                    try? await Task.sleep(for: .seconds(i * 2))
+                    try? await Task.sleep(for: .seconds(i * 3))
+                    while await MainActor.run(body: { self.requestsInFlight >= self.maxInFlight }) {
+                        try? await Task.sleep(for: .seconds(1))
+                    }
                     let client = OpenAI(configuration: config)
-                    let query = ChatQuery(messages: [
-                        .user(.init(content: .string("Hello! Response in one word.")))
-                    ], model: "gpt-oss-20b")
+                    let query = ChatQuery(
+                        messages: [
+                            .user(.init(content: .string("Hello")))
+                        ],
+                        model: "gpt-oss-20b"
+                    )
                     await MainActor.run {
                         self.requestsInFlight += 1
                     }
