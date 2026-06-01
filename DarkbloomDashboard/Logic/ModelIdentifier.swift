@@ -1,5 +1,21 @@
 import Foundation
 
+enum ModelKind {
+    case macBookPro
+    case macMini
+    case macStudio
+}
+
+extension ModelKind {
+    var systemImage: String {
+        switch self {
+            case .macBookPro: "macbook"
+            case .macMini: "macmini"
+            case .macStudio: "macstudio"
+        }
+    }
+}
+
 enum ModelIdentifier: String, Identifiable {
     
     var id: String {
@@ -98,6 +114,52 @@ extension ModelIdentifier {
             case .macStudioM2Ultra: "Mac Studio M2 Ultra"
             case .macStudioM3Ultra: "Mac Studio M3 Ultra"
             case .macStudioM4Max: "Mac Studio M4 Max"
+        }
+    }
+    
+    var modelKind: ModelKind {
+        switch self {
+            case .macBookProM1_13in,
+                    .macBookProM1Pro_14in,
+                    .macBookProM1Max_14in,
+                    .macBookProM1Pro_16in,
+                    .macBookProM1Max_16in,
+                    .macBookProM2_13in,
+                    .macBookProM2Pro_14in,
+                    .macBookProM2Max_14in,
+                    .macBookProM2Pro_16in,
+                    .macBookProM2Max_16in,
+                    .macBookProM3_14in,
+                    .macBookProM3Pro_14in,
+                    .macBookProM3Max_14CPU_30GPU_14in,
+                    .macBookProM3Max_16CPU_40GPU_14in,
+                    .macBookProM3Pro_16in,
+                    .macBookProM3Max_14CPU_30GPU_16in,
+                    .macBookProM3Max_16CPU_40GPU_16in,
+                    .macBookProM4_14in,
+                    .macBookProM4Pro_14in,
+                    .macBookProM4Max_14in,
+                    .macBookProM4Pro_16in,
+                    .macBookProM4Max_16in,
+                    .macBookProM5_14in,
+                    .macBookProM5Pro_14in,
+                    .macBookProM5Max_14in,
+                    .macBookProM5Pro_16in,
+                    .macBookProM5Max_16in:
+                    .macBookPro
+            case .macMiniM1,
+                    .macMiniM2,
+                    .macMiniM2Pro,
+                    .macMiniM4,
+                    .macMiniM4Pro:
+                    .macMini
+            case .macStudioM1Max,
+                    .macStudioM1Ultra,
+                    .macStudioM2Max,
+                    .macStudioM2Ultra,
+                    .macStudioM3Ultra,
+                    .macStudioM4Max:
+                    .macStudio
         }
     }
 }
