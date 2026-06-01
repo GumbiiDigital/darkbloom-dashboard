@@ -11,6 +11,7 @@
 - View detailed machine statistics (hardware, trust, traffic, etc.)
 - Check your balance and projected earnings
 - Generate load on the network (uses your API key to inject traffic)
+- Warm up machines in order to get them ready to receive requests
 - View local darkbloom logs in real-time (macOS only)
 
 ## Platform Support
