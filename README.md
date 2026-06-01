@@ -1,6 +1,9 @@
 # Darkbloom Dashboard
 > Monitor your darkbloom machines and earnings.
 
+> [!NOTE]
+> This project is not endorsed by or affiliated with EigenLabs, EigenLayer, darkbloom or any other involved parties. I built this for my own use, and open-sourced it so other providers can benefit from it as well.
+
 ## Features
 
 - Check darkbloom network health
