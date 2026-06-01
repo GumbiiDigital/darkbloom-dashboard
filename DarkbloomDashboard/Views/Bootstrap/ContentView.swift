@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var contentViewModel = ContentViewModel()
     @State private var earningsViewModel = EarningsViewModel()
     @State private var loadTestingViewModel = LoadTestingViewModel()
+    @State private var localServiceController = LocalServiceController()
     @State private var logsViewModel = LogsViewModel()
     
     private let settings = Settings.shared
@@ -13,6 +14,7 @@ struct ContentView: View {
         Group {
             #if os(macOS)
             ContentView_macOS()
+                .environment(localServiceController)
                 .environment(loadTestingViewModel)
                 .environment(logsViewModel)
             #elseif os(iOS)

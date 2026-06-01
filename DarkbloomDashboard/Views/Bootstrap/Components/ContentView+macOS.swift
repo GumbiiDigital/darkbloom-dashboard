@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ContentView_macOS: View {
     @Environment(LogsViewModel.self) private var logsViewModel
+    @Environment(LocalServiceController.self) private var localServiceController
     
     @Bindable private var navigation = NavigationController.shared
     private let settings = Settings.shared
@@ -50,9 +51,11 @@ struct ContentView_macOS: View {
         }
         .onAppear {
             logsViewModel.startStreaming()
+            localServiceController.startObservation()
         }
         .onDisappear() {
             logsViewModel.stopStreaming()
+            localServiceController.stopObservation()
         }
     }
 }

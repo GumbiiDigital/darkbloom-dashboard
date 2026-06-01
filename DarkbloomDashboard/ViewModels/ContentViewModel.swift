@@ -56,22 +56,19 @@ final class ContentViewModel {
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         
-        try? await self.refreshStatsAndAttestations()
-        try? await self.refreshBalance()
-        
         self.statsAndAttestationsTask?.cancel()
         self.statsAndAttestationsTask = Task {
             while !Task.isCancelled {
-                try await Task.sleep(for: .seconds(60))
                 try? await self.refreshStatsAndAttestations()
+                try await Task.sleep(for: .seconds(60))
             }
         }
         
         self.balanceTask?.cancel()
         self.balanceTask = Task {
             while !Task.isCancelled {
-                try await Task.sleep(for: .seconds(60))
                 try? await self.refreshBalance()
+                try await Task.sleep(for: .seconds(60))
             }
         }
     }

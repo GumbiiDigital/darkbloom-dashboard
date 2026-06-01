@@ -14,7 +14,6 @@ struct SidebarLink: View {
         NavigationLink(value: value) {
             Label(value.title, systemImage: value.systemImage)
                 .badge(badge ?? 0)
-                .badgeProminence(.increased)
                 .animation(.smooth, value: badge)
         }
     }
