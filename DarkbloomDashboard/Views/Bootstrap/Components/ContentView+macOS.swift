@@ -12,6 +12,7 @@ struct ContentView_macOS: View {
         NavigationSplitView {
             List(selection: $navigation.activeTab) {
                 SidebarLink(value: .overview)
+                SidebarLink(value: .earnings)
                 if !settings.trackedMachineSerialNumbers.isEmpty {
                     Section {
                         ForEach(settings.trackedMachineSerialNumbers) { serialNo in
@@ -33,6 +34,8 @@ struct ContentView_macOS: View {
                 switch navigation.activeTab {
                     case .overview:
                         DashboardTab()
+                    case .earnings:
+                        EarningsTab()
                     case .machine(let serialNo):
                         MachineDetailTab(serialNo: serialNo)
                     case .machines:

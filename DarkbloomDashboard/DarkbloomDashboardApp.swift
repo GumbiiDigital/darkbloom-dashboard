@@ -19,6 +19,5 @@ struct Darkbloom_DashboardApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
     }
 }

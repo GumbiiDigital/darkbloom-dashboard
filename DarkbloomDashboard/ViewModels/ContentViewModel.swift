@@ -1,5 +1,10 @@
 import Foundation
 
+struct BalanceChange: Equatable {
+    let diff: Double
+    let date: Date
+}
+
 @MainActor @Observable
 final class ContentViewModel {
     private var client: DarkbloomClient?
@@ -12,6 +17,8 @@ final class ContentViewModel {
     private(set) var attestations: DarkbloomAttestations?
     private(set) var balance: DarkbloomBalance?
     
+    private(set) var balanceChanges: [BalanceChange] = []
+    
     init() {
         if let apiKey = Settings.shared.apiKey {
             Task {
@@ -23,15 +30,31 @@ final class ContentViewModel {
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         
-        try await self.refreshStats()
-        try await self.refreshAttestations()
-        try await self.refreshBalance()
+        do {
+            try await self.refreshStats()
+        } catch {
+            print(error)
+        }
+        do {
+            try await self.refreshAttestations()
+        } catch {
+            print(error)
+        }
+        do {
+            try await self.refreshBalance()
+        } catch {
+            print(error)
+        }
         
         self.statsTask?.cancel()
         self.statsTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                try await self.refreshStats()
+                do {
+                    try await self.refreshStats()
+                } catch {
+                    print(error)
+                }
             }
         }
         
@@ -39,7 +62,11 @@ final class ContentViewModel {
         self.attestationsTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                try await self.refreshAttestations()
+                do {
+                    try await self.refreshAttestations()
+                } catch {
+                    print(error)
+                }
             }
         }
         
@@ -47,7 +74,11 @@ final class ContentViewModel {
         self.balanceTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                try await self.refreshBalance()
+                do {
+                    try await self.refreshBalance()
+                } catch {
+                    print(error)
+                }
             }
         }
     }
@@ -61,7 +92,17 @@ final class ContentViewModel {
     }
     
     private func refreshBalance() async throws {
-        self.balance = try await client?.balance()
+        let date = Date.now
+        guard let currentBalance = try await client?.balance() else { return }
+        if let previousBalance = self.balance {
+            let microUsdDiff = max(0, currentBalance.balanceMicroUsd - previousBalance.balanceMicroUsd)
+            let diff = Double(microUsdDiff) / 1_000_000.0
+            if diff > 0 {
+                let change = BalanceChange(diff: diff, date: date)
+                balanceChanges.append(change)
+            }
+        }
+        self.balance = currentBalance
     }
     
     var routableProviderCount: Int? {

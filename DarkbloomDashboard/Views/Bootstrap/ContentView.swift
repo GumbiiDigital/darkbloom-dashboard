@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @State private var contentViewModel = ContentViewModel()
+    @State private var earningsViewModel = EarningsViewModel()
     @State private var logsViewModel = LogsViewModel()
     
     private let settings = Settings.shared
@@ -20,7 +21,11 @@ struct ContentView: View {
     var body: some View {
         platformContent
             .environment(contentViewModel)
+            .environment(earningsViewModel)
             .environment(logsViewModel)
+            .onChange(of: contentViewModel.balanceChanges) {
+                earningsViewModel.calculateProjections(basedOn: contentViewModel.balanceChanges)
+            }
             .onChange(of: settings.apiKey) {
                 guard let apiKey = settings.apiKey else { return }
                 Task {

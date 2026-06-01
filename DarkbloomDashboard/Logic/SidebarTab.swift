@@ -2,6 +2,7 @@ import Foundation
 
 enum SidebarTab: Hashable, Identifiable {
     case overview
+    case earnings
     case machine(String)
     case machines
     case loadGenerator
@@ -10,6 +11,7 @@ enum SidebarTab: Hashable, Identifiable {
     var id: String {
         switch self {
             case .overview: "overview"
+            case .earnings: "earnings"
             case .machine(let id): "machine-\(id)"
             case .machines: "machines"
             case .loadGenerator: "load-generator"
@@ -20,6 +22,7 @@ enum SidebarTab: Hashable, Identifiable {
     var title: String {
         switch self {
             case .overview: "Overview"
+            case .earnings: "Earnings"
             case .machine(let id): id
             case .machines: "Machines"
             case .loadGenerator: "Load Generator"
@@ -29,7 +32,8 @@ enum SidebarTab: Hashable, Identifiable {
 
     var systemImage: String {
         switch self {
-            case .overview: "app"
+            case .overview: "gauge.with.dots.needle.67percent"
+            case .earnings: "dollarsign.gauge.chart.leftthird.topthird.rightthird"
             case .machine: "macstudio"
             case .machines: "macstudio"
             case .loadGenerator: "bolt.fill"
