@@ -9,8 +9,7 @@ struct BalanceChange: Equatable {
 final class ContentViewModel {
     private var client: DarkbloomClient?
     
-    private var statsTask: Task<Void, any Error>?
-    private var attestationsTask: Task<Void, any Error>?
+    private var statsAndAttestationsTask: Task<Void, any Error>?
     private var balanceTask: Task<Void, any Error>?
     
     private(set) var stats: DarkbloomStats?
@@ -18,6 +17,25 @@ final class ContentViewModel {
     private(set) var balance: DarkbloomBalance?
     
     private(set) var balanceChanges: [BalanceChange] = []
+    private(set) var machineInfo: [String: MachineInfo] = [:]
+    
+    enum CustomError: LocalizedError {
+        case combinedError([any Error])
+        
+        var errorDescription: String {
+            switch self {
+                case .combinedError(let errors):
+                    if errors.count == 1 {
+                        return String(describing: errors[0])
+                    } else {
+                        let descriptions = errors.enumerated().map { offset, error in
+                            "Error[\(offset)]: \(String(describing: error))"
+                        }
+                        return descriptions.joined(separator: "\n")
+                    }
+            }
+        }
+    }
     
     init() {
         if let apiKey = Settings.shared.apiKey {
@@ -30,23 +48,14 @@ final class ContentViewModel {
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
         
-        try? await self.refreshStats()
-        try? await self.refreshAttestations()
+        try? await self.refreshStatsAndAttestations()
         try? await self.refreshBalance()
         
-        self.statsTask?.cancel()
-        self.statsTask = Task {
+        self.statsAndAttestationsTask?.cancel()
+        self.statsAndAttestationsTask = Task {
             while !Task.isCancelled {
                 try await Task.sleep(for: .seconds(60))
-                try? await self.refreshStats()
-            }
-        }
-        
-        self.attestationsTask?.cancel()
-        self.attestationsTask = Task {
-            while !Task.isCancelled {
-                try await Task.sleep(for: .seconds(60))
-                try? await self.refreshAttestations()
+                try? await self.refreshStatsAndAttestations()
             }
         }
         
@@ -59,21 +68,30 @@ final class ContentViewModel {
         }
     }
     
-    private func refreshStats() async throws {
+    private func refreshStatsAndAttestations() async throws {
+        var didRefreshAny: Bool = false
+        var errors: [any Error] = []
         do {
             self.stats = try await client?.stats()
+            didRefreshAny = true
         } catch {
             print(error)
-            throw error
+            errors.append(error)
         }
-    }
-    
-    private func refreshAttestations() async throws {
         do {
             self.attestations = try await client?.attestations()
+            didRefreshAny = true
         } catch {
             print(error)
-            throw error
+            errors.append(error)
+        }
+        if didRefreshAny {
+            self.refreshMachineInformation()
+        }
+        if errors.count == 1, let onlyError = errors.first {
+            throw onlyError
+        } else if errors.count > 1 {
+            throw CustomError.combinedError(errors)
         }
     }
     
@@ -98,6 +116,48 @@ final class ContentViewModel {
             }
         }
         self.balance = currentBalance
+    }
+    
+    private func refreshMachineInformation() {
+        guard let stats, let attestations else { return }
+        for provider in attestations.providers {
+            guard let providerStats = stats.providers.first(where: { $0.id == provider.providerId }) else {
+                continue
+            }
+            let machineInfo = MachineInfo(
+                providerId: provider.providerId,
+                serialNumber: provider.serialNumber,
+                trust: MachineTrustInfo(
+                    status: provider.status,
+                    trustLevel: provider.trustLevel,
+                    attested: providerStats.attested,
+                    acmeVerified: provider.acmeVerified,
+                    authenticatedRootEnabled: provider.authenticatedRootEnabled,
+                    mdaSerial: provider.mdaSerial,
+                    mdaVerified: provider.mdaVerified,
+                    mdmVerified: provider.mdmVerified,
+                    secureBootEnabled: provider.secureBootEnabled,
+                    secureEnclave: provider.secureEnclave,
+                    sipEnabled: provider.sipEnabled,
+                    runtimeVerified: providerStats.runtimeVerified
+                ),
+                hardware: MachineHardwareInfo(
+                    modelIdentifier: provider.hardwareModel,
+                    chipName: provider.chipName,
+                    cpuCores: providerStats.cpuCores,
+                    gpuCores: providerStats.gpuCores,
+                    memoryGb: providerStats.memoryGb,
+                    memoryBandwidthGbs: providerStats.memoryBandwidthGbs
+                ),
+                activity: MachineActivityInfo(
+                    requestsServed: providerStats.requestsServed,
+                    tokensGenerated: providerStats.tokensGenerated,
+                    lastChallengeVerified: providerStats.lastChallengeVerified,
+                    failedChallenges: providerStats.failedChallenges
+                )
+            )
+            self.machineInfo[provider.serialNumber] = machineInfo
+        }
     }
     
     var routableProviderCount: Int? {

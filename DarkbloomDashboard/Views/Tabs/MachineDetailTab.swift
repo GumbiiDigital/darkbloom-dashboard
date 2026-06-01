@@ -6,33 +6,23 @@ struct MachineDetailTab: View {
     
     let serialNo: String
     
-    var providerAttestation: DarkbloomProviderAttestation? {
-        viewModel.attestations?.providers.first(where: { $0.serialNumber == serialNo })
-    }
-    
-    func providerStats(for id: String) -> DarkbloomProviderStat? {
-        viewModel.stats?.providers.first(where: { $0.id == id })
-    }
-    
     var body: some View {
         Form {
-            if let providerAttestation {
+            if let machine = viewModel.machineInfo[serialNo] {
                 Section {
                     LabeledContent {
-                        Text(providerAttestation.providerId)
+                        Text(machine.providerId)
                     } label: {
                         Text("Provider ID")
                     }
                 }
-                HardwareSection(providerAttestation: providerAttestation)
+                HardwareSection(hardware: machine.hardware)
                 #if os(macOS)
-                TrustSection(providerAttestation: providerAttestation, showAll: true)
+                TrustSection(trust: machine.trust, showAll: true)
                 #else
-                TrustSection(providerAttestation: providerAttestation, showAll: false)
+                TrustSection(trust: machine.trust, showAll: false)
                 #endif
-                if let providerStats = providerStats(for: providerAttestation.providerId) {
-                    NetworkSection(providerAttestation: providerAttestation, providerStats: providerStats)
-                }
+                NetworkSection(activity: machine.activity)
             }
         }
         .formStyle(.grouped)
@@ -41,30 +31,24 @@ struct MachineDetailTab: View {
 
 extension MachineDetailTab {
     struct HardwareSection: View {
-        let providerAttestation: DarkbloomProviderAttestation
+        let hardware: MachineHardwareInfo
         
         var body: some View {
             Section {
                 LabeledContent {
-                    if let hwModel = ModelIdentifier(rawValue: providerAttestation.hardwareModel) {
-                        Text(hwModel.displayName)
-                    } else {
-                        Text(providerAttestation.hardwareModel)
-                    }
+                    Text(hardware.modelDisplayName)
                 } label: {
                     Text("Model")
                 }
-                if ModelIdentifier(rawValue: providerAttestation.hardwareModel) == nil {
-                    LabeledContent {
-                        Text(providerAttestation.chipName)
-                    } label: {
-                        Text("Chip Name")
-                    }
-                }
                 LabeledContent {
-                    Text("\(providerAttestation.memoryGb) GB")
+                    Text("\(hardware.memoryGb) GB")
                 } label: {
                     Text("Unified Memory")
+                }
+                LabeledContent {
+                    Text("\(hardware.memoryBandwidthGbs) GB/s")
+                } label: {
+                    Text("Memory Bandwidth")
                 }
             } header: {
                 Text("Hardware")
@@ -73,54 +57,54 @@ extension MachineDetailTab {
     }
     
     struct TrustSection: View {
-        let providerAttestation: DarkbloomProviderAttestation
+        let trust: MachineTrustInfo
         let showAll: Bool
         
         var body: some View {
             Section {
                 LabeledContent {
-                    Text(providerAttestation.trustLevel.displayName)
+                    Text(trust.trustLevel.displayName)
                 } label: {
                     Text("Trust Level")
                 }
-                if showAll || !providerAttestation.mdaVerified {
+                if showAll || !trust.mdaVerified {
                     LabeledContent {
-                        Text(providerAttestation.mdaVerified ? "Yes" : "No")
+                        Text(trust.mdaVerified ? "Yes" : "No")
                     } label: {
                         Text("Mobile Device Attestation (MDA)")
                     }
                 }
-                if showAll || !providerAttestation.mdmVerified {
+                if showAll || !trust.mdmVerified {
                     LabeledContent {
-                        Text(providerAttestation.mdmVerified ? "Yes" : "No")
+                        Text(trust.mdmVerified ? "Yes" : "No")
                     } label: {
                         Text("Mobile Device Management (MDM)")
                     }
                 }
-                if showAll || !providerAttestation.authenticatedRootEnabled {
+                if showAll || !trust.authenticatedRootEnabled {
                     LabeledContent {
-                        Text(providerAttestation.authenticatedRootEnabled ? "Yes" : "No")
+                        Text(trust.authenticatedRootEnabled ? "Yes" : "No")
                     } label: {
                         Text("Authenticated Root")
                     }
                 }
-                if showAll || !providerAttestation.sipEnabled {
+                if showAll || !trust.sipEnabled {
                     LabeledContent {
-                        Text(providerAttestation.sipEnabled ? "Yes" : "No")
+                        Text(trust.sipEnabled ? "Yes" : "No")
                     } label: {
                         Text("System Integrity Protection")
                     }
                 }
-                if showAll || !providerAttestation.secureBootEnabled {
+                if showAll || !trust.secureBootEnabled {
                     LabeledContent {
-                        Text(providerAttestation.secureBootEnabled ? "Yes" : "No")
+                        Text(trust.secureBootEnabled ? "Yes" : "No")
                     } label: {
                         Text("Secure Boot")
                     }
                 }
-                if showAll || !providerAttestation.secureEnclave {
+                if showAll || !trust.secureEnclave {
                     LabeledContent {
-                        Text(providerAttestation.secureEnclave ? "Yes" : "No")
+                        Text(trust.secureEnclave ? "Yes" : "No")
                     } label: {
                         Text("Secure Enclave")
                     }
@@ -129,7 +113,7 @@ extension MachineDetailTab {
                 HStack {
                     Text("Trust & Attestation")
                     Spacer()
-                    if providerAttestation.isTrusted {
+                    if trust.isTrusted {
                         HStack {
                             Text(Image(systemName: "shield.fill"))
                             Text("Trusted")
@@ -144,23 +128,23 @@ extension MachineDetailTab {
                     }
                 }
             }
+            .animation(.snappy, value: trust)
         }
     }
     
     struct NetworkSection: View {
-        let providerAttestation: DarkbloomProviderAttestation
-        let providerStats: DarkbloomProviderStat
+        let activity: MachineActivityInfo
         
         var body: some View {
             Section {
                 LabeledContent {
-                    Text(providerStats.requestsServed, format: .number)
+                    Text(activity.requestsServed, format: .number)
                         .contentTransition(.numericText())
                 } label: {
                     Text("Requests Served")
                 }
                 LabeledContent {
-                    Text(providerStats.tokensGenerated, format: .number)
+                    Text(activity.tokensGenerated, format: .number)
                         .contentTransition(.numericText())
                 } label: {
                     Text("Tokens Generated")
@@ -168,7 +152,7 @@ extension MachineDetailTab {
             } header: {
                 Text("Network")
             }
-            .animation(.snappy, value: providerStats)
+            .animation(.snappy, value: activity)
         }
     }
 }

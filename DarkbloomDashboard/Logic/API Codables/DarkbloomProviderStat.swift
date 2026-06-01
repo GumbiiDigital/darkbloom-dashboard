@@ -19,6 +19,7 @@ struct DarkbloomProviderStat: Decodable, Equatable {
     let tokensGenerated: Int
     
     let failedChallenges: Int
+    let lastChallengeVerified: String
 }
 
 extension DarkbloomProviderStat {

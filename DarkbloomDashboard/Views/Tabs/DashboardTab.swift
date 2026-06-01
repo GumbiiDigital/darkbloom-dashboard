@@ -76,9 +76,9 @@ struct DashboardTab: View {
                         HStack(alignment: .firstTextBaseline) {
                             Text(serialNo)
                             Spacer()
-                            if let provider = viewModel.attestations?.providers.first(where: { $0.serialNumber == serialNo }) {
+                            if let machine = viewModel.machineInfo[serialNo] {
                                 HStack(alignment: .firstTextBaseline) {
-                                    switch provider.isTrusted {
+                                    switch machine.trust.isTrusted {
                                         case true:
                                             Text(Image(systemName: "lock.shield.fill"))
                                             Text("Full Trust")
@@ -87,7 +87,7 @@ struct DashboardTab: View {
                                             Text("Reduced Trust")
                                     }
                                 }
-                                .foregroundStyle(provider.isTrusted ? Color.secondary : Color.yellow)
+                                .foregroundStyle(machine.trust.isTrusted ? Color.secondary : Color.yellow)
                             }
                         }
                         .contentShape(.rect)
@@ -120,11 +120,8 @@ struct DashboardTab: View {
             }
             
             ForEach(settings.trackedMachineSerialNumbers) { serialNo in
-                let provider = viewModel.attestations?.providers.first { $0.serialNumber == serialNo }
-                let providerStats = provider.flatMap { provider in
-                    viewModel.stats?.providers.first { $0.id == provider.providerId }
-                }
-                MachineInfoView(serialNo: serialNo, provider: provider, stats: providerStats)
+                let machine = viewModel.machineInfo[serialNo]
+                MachineInfoView(serialNo: serialNo, machine: machine)
             }
         }
         .formStyle(.grouped)
@@ -151,15 +148,14 @@ struct DashboardTab: View {
 
 struct MachineInfoView: View {
     let serialNo: String
-    let provider: DarkbloomProviderAttestation?
-    let stats: DarkbloomProviderStat?
+    let machine: MachineInfo?
     
     var body: some View {
         Section {
-            if let provider {
+            if let machine {
                 LabeledContent {
                     HStack(alignment: .firstTextBaseline) {
-                        switch provider.status {
+                        switch machine.trust.status {
                             case .online:
                                 Text(Image(systemName: "checkmark.circle"))
                                 Text("Online")
@@ -177,7 +173,7 @@ struct MachineInfoView: View {
                 
                 LabeledContent {
                     HStack(alignment: .firstTextBaseline) {
-                        switch provider.trustLevel {
+                        switch machine.trust.trustLevel {
                             case .hardware:
                                 Text(Image(systemName: "macbook.badge.shield.checkmark"))
                                 Text("Hardware")
@@ -197,8 +193,8 @@ struct MachineInfoView: View {
             }
         } header: {
             HStack(alignment: .bottom) {
-                if let provider {
-                    switch provider.status {
+                if let machine {
+                    switch machine.trust.status {
                         case .online, .serving:
                             Text(Image(systemName: "circle.fill")).foregroundStyle(Color.green)
                         case .untrusted:
@@ -209,9 +205,9 @@ struct MachineInfoView: View {
                 }
                 
                 Text(serialNo)
-                if let provider {
+                if let machine {
                     Text(verbatim: "|")
-                    Text(provider.chipName)
+                    Text(machine.hardware.modelDisplayName)
                 }
             }
         }
