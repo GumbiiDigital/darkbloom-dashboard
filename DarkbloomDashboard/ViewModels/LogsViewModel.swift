@@ -1,15 +1,19 @@
 import Foundation
 import OSLog
 
-struct DarkbloomLogEntry: Identifiable {
+struct DarkbloomLogEntry: Equatable, Identifiable {
     let id: UUID
     let date: Date
     let message: String
+    let category: String
+    let level: OSLogEntryLog.Level
     
-    init(from osLogEntry: OSLogEntry) {
+    init(from osLogEntry: OSLogEntryLog) {
         self.id = UUID()
         self.date = osLogEntry.date
         self.message = osLogEntry.composedMessage
+        self.category = osLogEntry.category
+        self.level = osLogEntry.level
     }
 }
 
@@ -74,7 +78,7 @@ final class LogsViewModel {
         streamTask = nil
     }
     
-    @concurrent private func fetchOlderLogs() async throws -> [OSLogEntry] {
+    @concurrent private func fetchOlderLogs() async throws -> [OSLogEntryLog] {
         #if os(macOS)
         let store = try OSLogStore(scope: .system)
         let position = store.position(date: Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!)
@@ -90,7 +94,7 @@ final class LogsViewModel {
         #endif
     }
     
-    @concurrent private func fetchLogsSince(_ date: Date) async throws -> [OSLogEntry] {
+    @concurrent private func fetchLogsSince(_ date: Date) async throws -> [OSLogEntryLog] {
         #if os(macOS)
         let store = try OSLogStore(scope: .system)
         let position = store.position(date: date)

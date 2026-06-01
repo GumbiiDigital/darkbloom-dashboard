@@ -1,5 +1,6 @@
 import SwiftUI
 import FiveKit
+import OSLog
 
 struct LogsTab: View {
     @Environment(LogsViewModel.self) private var viewModel
@@ -31,6 +32,7 @@ struct LogsTab: View {
                     .controlSize(.small)
                 }
             }
+            .animation(.interactiveSpring, value: viewModel.logs)
         }
         .formStyle(.grouped)
         .onAppear {
@@ -39,20 +41,69 @@ struct LogsTab: View {
     }
 }
 
+struct LabeledLogComponent<Content: View, Label: View>: View {
+    let content: () -> Content
+    let label: () -> Label
+    
+    init(@ViewBuilder content: @escaping () -> Content, @ViewBuilder label: @escaping () -> Label) {
+        self.content = content
+        self.label = label
+    }
+    
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            label()
+            Text(verbatim: "|")
+            content()
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+    }
+}
+
 struct LogEntryView: View {
     let entry: DarkbloomLogEntry
     
+    func pillStyle(for logLevel: OSLogEntryLog.Level) -> PillContentStyle {
+        switch entry.level {
+            case .notice: .warning
+            case .error: .negative
+            case .fault: .negative
+            default: .neutral
+        }
+    }
+    
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Text(entry.date, style: Text.DateStyle.date)
-                Text(entry.date, style: Text.DateStyle.time)
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            
+        VStack(alignment: .leading, spacing: 4) {
             Text(entry.message)
                 .fixedSize(horizontal: false, vertical: true)
+            
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                LabeledLogComponent {
+                    Text(entry.date.formatted(.iso8601))
+                } label: {
+                    Text("time")
+                }
+                LabeledLogComponent {
+                    switch entry.level {
+                        case .undefined: EmptyView()
+                        case .debug: Text("debug")
+                        case .info: Text("info")
+                        case .notice: Text("notice").foregroundStyle(.yellow)
+                        case .error: Text("error").foregroundStyle(.red)
+                        case .fault: Text("fault").foregroundStyle(.red)
+                        @unknown default: EmptyView()
+                    }
+                } label: {
+                    Text("level")
+                }
+                LabeledLogComponent {
+                    Text(entry.category)
+                } label: {
+                    Text("category")
+                }
+            }
+            .controlSize(.small)
         }
     }
 }

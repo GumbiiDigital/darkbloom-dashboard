@@ -57,8 +57,8 @@ struct Pill<Content: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             content()
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .padding(.vertical, verticalSpacing)
+        .padding(.horizontal, horizontalSpacing)
         .background {
             style.background
         }
