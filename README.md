@@ -12,6 +12,7 @@
 - Check your balance and projected earnings
 - Generate load on the network (uses your API key to inject traffic)
 - Warm up machines in order to get them ready to receive requests
+- Smart restart of local provider with automatic model warmup
 - View local darkbloom logs in real-time (macOS only)
 
 ## Platform Support
