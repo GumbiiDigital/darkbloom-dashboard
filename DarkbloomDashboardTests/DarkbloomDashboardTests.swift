@@ -40,6 +40,7 @@ struct Darkbloom_DashboardTests {
         ])
     }
 
+    #if os(macOS)
     @Test func remoteRestartTargetCanRoundTripThroughJson() async throws {
         let target = MachineRestartTarget(
             serialNumber: "SERIAL123",
@@ -65,11 +66,12 @@ struct Darkbloom_DashboardTests {
         #expect(target.sshRestartArguments == [
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=10",
+            "-o", "StrictHostKeyChecking=accept-new",
             "provider@lab-mac.tailnet.example",
             "~/.darkbloom/bin/darkbloom stop; sleep 2; ~/.darkbloom/bin/darkbloom start --all"
         ])
     }
-
+    #endif
 }
 
 private extension MachineTrustInfo {
