@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import SwiftUI
 import FiveKit
 
@@ -143,3 +145,5 @@ struct LoadGeneratorTab: View {
     LoadGeneratorTab()
         .environment(LoadTestingViewModel())
 }
+
+#endif

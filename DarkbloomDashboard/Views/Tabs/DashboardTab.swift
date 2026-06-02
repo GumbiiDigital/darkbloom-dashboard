@@ -1,11 +1,17 @@
 import SwiftUI
 import FiveKit
 import OpenAI
+
+#if canImport(IOKit)
 import IOKit
+#endif
 
 struct DashboardTab: View {
     @Environment(ContentViewModel.self) private var viewModel
+    
+    #if os(macOS)
     @Environment(LocalServiceController.self) private var localServiceController: LocalServiceController?
+    #endif
     
     private let settings = Settings.shared
     
@@ -13,9 +19,11 @@ struct DashboardTab: View {
         Form {
             APIKeySection()
             
+            #if os(macOS)
             if let localServiceController, localServiceController.darkbloomExists() {
                 LocalDarkbloomSection(localServiceController: localServiceController)
             }
+            #endif
             
             NetworkOverviewSection()
             TrackedMachineListSection()
@@ -71,6 +79,7 @@ extension DashboardTab {
         }
     }
     
+    #if os(macOS)
     struct LocalDarkbloomSection: View {
         @Environment(ContentViewModel.self) private var contentViewModel
         
@@ -197,7 +206,7 @@ extension DashboardTab {
                     .transition(.opacity)
                 }
             } header: {
-                HStack {
+                HStack(alignment: .bottom) {
                     Label("Darkbloom Process", systemImage: "server.rack")
                     Spacer()
                     Button {
@@ -215,6 +224,7 @@ extension DashboardTab {
             .animation(.interactiveSpring, value: restartingStep)
         }
     }
+    #endif
     
     struct NetworkOverviewSection: View {
         @Environment(ContentViewModel.self) private var viewModel
@@ -291,7 +301,7 @@ extension DashboardTab {
                     }
                 }
             } header: {
-                HStack {
+                HStack(alignment: .bottom) {
                     Label("Machines", systemImage: "macstudio.fill")
                     Spacer()
                     Button {

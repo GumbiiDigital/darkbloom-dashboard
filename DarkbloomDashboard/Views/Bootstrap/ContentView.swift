@@ -4,9 +4,12 @@ import SwiftData
 struct ContentView: View {
     @State private var contentViewModel = ContentViewModel()
     @State private var earningsViewModel = EarningsViewModel()
+    
+    #if os(macOS)
     @State private var loadTestingViewModel = LoadTestingViewModel()
     @State private var localServiceController = LocalServiceController()
     @State private var logsViewModel = LogsViewModel()
+    #endif
     
     private let settings = Settings.shared
     

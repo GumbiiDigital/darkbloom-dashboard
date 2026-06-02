@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import Foundation
 import OSLog
 
@@ -79,7 +81,6 @@ final class LogsViewModel {
     }
     
     @concurrent private func fetchOlderLogs() async throws -> [OSLogEntryLog] {
-        #if os(macOS)
         let store = try OSLogStore(scope: .system)
         let position = store.position(date: Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!)
         let predicate = NSPredicate(format: "subsystem == %@", subsystem)
@@ -89,13 +90,9 @@ final class LogsViewModel {
             return logEntry
         }
         .sorted { $0.date < $1.date }
-        #else
-        return []
-        #endif
     }
     
     @concurrent private func fetchLogsSince(_ date: Date) async throws -> [OSLogEntryLog] {
-        #if os(macOS)
         let store = try OSLogStore(scope: .system)
         let position = store.position(date: date)
         let predicate = NSPredicate(format: "subsystem == %@", subsystem)
@@ -105,8 +102,7 @@ final class LogsViewModel {
             return logEntry
         }
         .sorted { $0.date < $1.date }
-        #else
-        return []
-        #endif
     }
 }
+
+#endif

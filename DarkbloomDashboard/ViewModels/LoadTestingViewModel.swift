@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import Foundation
 import OpenAI
 
@@ -155,3 +157,5 @@ private enum WaveResult {
     case success(ChatResult)
     case failure(Int?)
 }
+
+#endif

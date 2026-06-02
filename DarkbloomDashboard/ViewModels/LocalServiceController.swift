@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import Foundation
 
 @MainActor @Observable
@@ -105,3 +107,5 @@ final class LocalServiceController {
         return output
     }
 }
+
+#endif

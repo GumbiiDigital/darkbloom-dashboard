@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import SwiftUI
 import FiveKit
 import OSLog
@@ -112,3 +114,5 @@ struct LogEntryView: View {
     LogsTab()
         .environment(LogsViewModel())
 }
+
+#endif

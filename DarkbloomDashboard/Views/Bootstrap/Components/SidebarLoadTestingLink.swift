@@ -1,3 +1,5 @@
+#if os(macOS)
+
 import SwiftUI
 import FiveKit
 
@@ -28,3 +30,5 @@ struct SidebarLoadTestingLink: View {
     }
     .listStyle(.sidebar)
 }
+
+#endif
