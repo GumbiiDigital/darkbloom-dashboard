@@ -38,6 +38,49 @@ struct DashboardTab: View {
 }
 
 extension DashboardTab {
+    struct TrustExplanationButton: View {
+        @State private var isShowingExplanation: Bool = false
+
+        let trust: MachineTrustInfo
+
+        var body: some View {
+            Button {
+                isShowingExplanation.toggle()
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.borderless)
+            .help("Why trust is reduced")
+            .popover(isPresented: $isShowingExplanation, arrowEdge: .trailing) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(trust.isTrusted ? "Full Trust" : "Reduced Trust")
+                        .font(.headline)
+
+                    if trust.reducedTrustReasons.isEmpty {
+                        Text("This machine currently satisfies the tracked Darkbloom trust checks.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(trust.reducedTrustReasons) { reason in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(reason.title)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text(reason.explanation)
+                                    .foregroundStyle(.secondary)
+                                Text(reason.recoveryAction)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(width: 360, alignment: .leading)
+                .padding()
+            }
+        }
+    }
+
     struct APIKeySection: View {
         @AppStorage("darkbloom_api_key_locked") private var apiKeyLocked: Bool = false
         @Bindable private var settings = Settings.shared
@@ -85,10 +128,22 @@ extension DashboardTab {
         
         @State private var isRestarting: Bool = false
         @State private var restartingStep: String?
+        @State private var restartSelection: String = "all"
+        @State private var remoteRestartUser: String = ""
+        @State private var remoteRestartHost: String = ""
         
         let localServiceController: LocalServiceController
         
         private let settings = Settings.shared
+        private let allRestartSelection = "all"
+
+        private var restartableSerialNumbers: [String] {
+            settings.trackedMachineSerialNumbers
+        }
+
+        private var isRemoteRestartSelection: Bool {
+            restartSelection != allRestartSelection && restartSelection != getSerialNumber()
+        }
         
         private func getSerialNumber() -> String? {
             let platformExpert = IOServiceGetMatchingService(
@@ -110,38 +165,45 @@ extension DashboardTab {
             return serial
         }
         
-        private func restart() async {
-            defer { restartingStep = nil }
-            
+        private func restart(serialNumber: String) async {
             restartingStep = "Determining darkbloom location..."
-            guard let darkbloomPath = try? localServiceController.fetchDarkbloomLocation() else {
-                restartingStep = "Unable to find darkbloom."
+            let localSerialNumber = getSerialNumber()
+            if serialNumber == localSerialNumber {
+                guard let darkbloomPath = try? localServiceController.fetchDarkbloomLocation() else {
+                    restartingStep = "Unable to find darkbloom."
+                    try? await Task.sleep(for: .seconds(5))
+                    return
+                }
+
+                restartingStep = "Stopping darkbloom service on this Mac..."
+                try? localServiceController.stopDarkbloom(at: darkbloomPath)
+
+                // Fetch network info (machine should be offline)
+                if let apiKey = settings.apiKey {
+                    try? await Task.sleep(for: .seconds(5))
+                    try? await contentViewModel.update(apiKey: apiKey)
+                }
+
+                restartingStep = "Starting darkbloom service on this Mac..."
+                try? localServiceController.startDarkbloom(at: darkbloomPath)
+            } else if let target = settings.remoteRestartTargets[serialNumber] {
+                restartingStep = "Restarting \(target.displayName) over SSH..."
+                do {
+                    try localServiceController.restartRemoteDarkbloom(target: target)
+                } catch {
+                    restartingStep = "Unable to restart \(target.displayName): \(error.localizedDescription)"
+                    try? await Task.sleep(for: .seconds(8))
+                    return
+                }
+            } else {
+                restartingStep = "No restart route configured for \(serialNumber)."
                 try? await Task.sleep(for: .seconds(5))
                 return
             }
-            
-            restartingStep = "Stopping darkbloom service..."
-            try? localServiceController.stopDarkbloom(at: darkbloomPath)
-            
-            // Fetch network info (machine should be offline)
-            if let apiKey = settings.apiKey {
-                try? await Task.sleep(for: .seconds(5))
-                try? await contentViewModel.update(apiKey: apiKey)
-            }
-            
-            restartingStep = "Starting darkbloom service..."
-            try? localServiceController.startDarkbloom(at: darkbloomPath)
-            
+
             // If there's no api key, we're done here
             guard let apiKey = settings.apiKey else {
                 restartingStep = "Done."
-                try? await Task.sleep(for: .seconds(5))
-                return
-            }
-            
-            restartingStep = "Getting serial number..."
-            guard let serialNumber = getSerialNumber() else {
-                restartingStep = "Unable to obtain serial number."
                 try? await Task.sleep(for: .seconds(5))
                 return
             }
@@ -151,7 +213,7 @@ extension DashboardTab {
             while true {
                 try? await Task.sleep(for: .seconds(5))
                 try? await contentViewModel.update(apiKey: apiKey)
-                if contentViewModel.machineInfo[serialNumber] != nil {
+                if contentViewModel.machineInfo[serialNumber]?.trust.isOnline == true {
                     break
                 }
                 if onlineCheckStartDate.timeIntervalUntilNow > 120 {
@@ -181,7 +243,63 @@ extension DashboardTab {
             
             restartingStep = "Done"
             try? await Task.sleep(for: .seconds(5))
-            restartingStep = nil
+        }
+
+        private func restartSelectedMachines() async {
+            defer { restartingStep = nil }
+
+            let serialNumbers: [String]
+            if restartSelection == allRestartSelection {
+                serialNumbers = restartableSerialNumbers
+            } else {
+                serialNumbers = [restartSelection]
+            }
+
+            guard !serialNumbers.isEmpty else {
+                restartingStep = "No machines selected."
+                try? await Task.sleep(for: .seconds(5))
+                return
+            }
+
+            for serialNumber in serialNumbers {
+                restartingStep = "Preparing \(label(for: serialNumber))..."
+                await restart(serialNumber: serialNumber)
+            }
+        }
+
+        private func label(for serialNumber: String) -> String {
+            if let target = settings.remoteRestartTargets[serialNumber] {
+                return "\(target.displayName) (\(serialNumber))"
+            }
+            if serialNumber == getSerialNumber() {
+                return "This Mac (\(serialNumber))"
+            }
+            return serialNumber
+        }
+
+        private func loadRemoteRestartFields(serialNumber: String) {
+            guard serialNumber != allRestartSelection else {
+                remoteRestartUser = ""
+                remoteRestartHost = ""
+                return
+            }
+            let target = settings.remoteRestartTargets[serialNumber]
+            remoteRestartUser = target?.user ?? ""
+            remoteRestartHost = target?.host ?? ""
+        }
+
+        private func saveRemoteRestartTarget() {
+            let trimmedUser = remoteRestartUser.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedHost = remoteRestartHost.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard isRemoteRestartSelection, !trimmedUser.isEmpty, !trimmedHost.isEmpty else { return }
+            settings.setRemoteRestartTarget(
+                MachineRestartTarget(
+                    serialNumber: restartSelection,
+                    displayName: restartSelection,
+                    user: trimmedUser,
+                    host: trimmedHost
+                )
+            )
         }
         
         var body: some View {
@@ -196,6 +314,40 @@ extension DashboardTab {
                     Text("Process Status")
                 }
                 .animation(.interactiveSpring, value: localServiceController.processIsRunning)
+
+                Picker("Restart Target", selection: $restartSelection) {
+                    Text("All tracked machines").tag(allRestartSelection)
+                    ForEach(restartableSerialNumbers, id: \.self) { serialNumber in
+                        Text(label(for: serialNumber)).tag(serialNumber)
+                    }
+                }
+
+                if isRemoteRestartSelection {
+                    LabeledContent {
+                        TextField("macOS account name", text: $remoteRestartUser)
+                            .textFieldStyle(.roundedBorder)
+                    } label: {
+                        Text("SSH User")
+                    }
+
+                    LabeledContent {
+                        TextField("Tailscale host or IP", text: $remoteRestartHost)
+                            .textFieldStyle(.roundedBorder)
+                    } label: {
+                        Text("SSH Host")
+                    }
+
+                    HStack {
+                        Spacer()
+                        Button("Save SSH Target") {
+                            saveRemoteRestartTarget()
+                        }
+                        .disabled(
+                            remoteRestartUser.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                            remoteRestartHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        )
+                    }
+                }
                 
                 if let restartingStep {
                     LabeledContent {
@@ -212,7 +364,7 @@ extension DashboardTab {
                     Button {
                         isRestarting = true
                         Task {
-                            await restart()
+                            await restartSelectedMachines()
                             isRestarting = false
                         }
                     } label: {
@@ -222,6 +374,12 @@ extension DashboardTab {
                 }
             }
             .animation(.interactiveSpring, value: restartingStep)
+            .onAppear {
+                loadRemoteRestartFields(serialNumber: restartSelection)
+            }
+            .onChange(of: restartSelection) { _, serialNumber in
+                loadRemoteRestartFields(serialNumber: serialNumber)
+            }
         }
     }
     #endif
@@ -281,6 +439,9 @@ extension DashboardTab {
                                     }
                                 }
                                 .foregroundStyle(machine.trust.isTrusted ? Color.secondary : Color.yellow)
+                                if !machine.trust.isTrusted {
+                                    TrustExplanationButton(trust: machine.trust)
+                                }
                             }
                         }
                         .contentShape(.rect)

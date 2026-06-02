@@ -123,6 +123,7 @@ extension MachineDetailTab {
                         HStack {
                             Text(Image(systemName: "shield.slash.fill"))
                             Text("Reduced Trust")
+                            DashboardTab.TrustExplanationButton(trust: trust)
                         }
                         .foregroundStyle(.yellow)
                     }
