@@ -14,6 +14,7 @@ struct MachineRestartTarget: Codable, Equatable, Identifiable {
         [
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=10",
+            "-o", "StrictHostKeyChecking=accept-new",
             "\(user)@\(host)",
             "~/.darkbloom/bin/darkbloom stop; sleep 2; ~/.darkbloom/bin/darkbloom start --all"
         ]
