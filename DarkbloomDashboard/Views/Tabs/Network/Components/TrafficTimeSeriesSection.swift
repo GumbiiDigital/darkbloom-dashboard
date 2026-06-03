@@ -3,8 +3,59 @@ import Charts
 import FiveKit
 
 extension NetworkTab {
+    private struct RequestSeriesEntry: Identifiable {
+        let timestamp: Date
+        let requests: Int
+        
+        var id: String {
+            "\(timestamp.formatted(.iso8601))-\(requests)"
+        }
+    }
+    
+    private struct TokenSeriesEntry: Identifiable {
+        let timestamp: Date
+        let kind: Kind
+        let tokens: Int
+        
+        var id: String {
+            "\(timestamp.formatted(.iso8601))-\(kind.rawValue)"
+        }
+        
+        enum Kind: String {
+            case prompt
+            case completion
+            
+            var label: String {
+                switch self {
+                    case .prompt: "Prompt"
+                    case .completion: "Completion"
+                }
+            }
+        }
+    }
+    
     struct TrafficTimeSeriesSection: View {
         let stats: DarkbloomStats
+        
+        private var requestSeries: [RequestSeriesEntry] {
+            let rawEntries = stats.timeSeries.map {
+                RequestSeriesEntry(timestamp: $0.timestamp, requests: $0.requests)
+            }
+            guard let (firstEntryTime, lastEntryTime) = rawEntries.minmax(byValue: \.timestamp) else {
+                return rawEntries
+            }
+            var consecutiveEntries: [RequestSeriesEntry] = []
+            var currentTime = firstEntryTime
+            while currentTime < lastEntryTime {
+                if let entry = rawEntries.first(where: { $0.timestamp == currentTime }) {
+                    consecutiveEntries.append(entry)
+                } else {
+                    consecutiveEntries.append(RequestSeriesEntry(timestamp: currentTime, requests: 0))
+                }
+                currentTime = Calendar.current.date(byAdding: .minute, value: 1, to: currentTime)!
+            }
+            return consecutiveEntries
+        }
         
         private var tokenSeries: [TokenSeriesEntry] {
             stats.timeSeries.flatMap { entry in
@@ -17,12 +68,17 @@ extension NetworkTab {
         
         var body: some View {
             Section {
-                HStack {
-                    Chart(stats.timeSeries) { entry in
-                        LineMark(x: .value("timestamp", entry.timestamp, unit: .minute), y: .value("requests", entry.requests))
+                HStack(spacing: 16) {
+                    
+                    // Requests Chart
+                    Chart(requestSeries) { entry in
+                        LineMark(
+                            x: .value("timestamp", entry.timestamp, unit: .minute),
+                            y: .value("requests", entry.requests)
+                        )
                     }
-                    .padding(8)
-                    .background(Color.systemFill, in: .rect(cornerRadius: 8))
+                    
+                    // Tokens Chart
                     Chart(tokenSeries) { entry in
                         BarMark(
                             x: .value("timestamp", entry.timestamp, unit: .minute),
@@ -35,11 +91,12 @@ extension NetworkTab {
                         TokenSeriesEntry.Kind.prompt.label: Color.accent,
                         TokenSeriesEntry.Kind.completion.label: Color.green,
                     ])
-                    .padding(8)
-                    .background(Color.systemFill, in: .rect(cornerRadius: 8))
+                    .chartLegend(.hidden)
                 }
             } header: {
-                HStack {
+                HStack(spacing: 16) {
+                    
+                    // Requests Header
                     VStack(alignment: .leading) {
                         let total = stats.timeSeries.map(\.requests).reduce(0, +)
                         let peak = stats.timeSeries.map(\.requests).max() ?? 0
@@ -50,6 +107,7 @@ extension NetworkTab {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
+                    // Tokens Header
                     VStack(alignment: .leading) {
                         let total = stats.timeSeries.map(\.totalTokens).reduce(0, +)
                         let peak = stats.timeSeries.map(\.totalTokens).max() ?? 0
@@ -59,28 +117,6 @@ extension NetworkTab {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-        
-        private struct TokenSeriesEntry: Identifiable {
-            let timestamp: Date
-            let kind: Kind
-            let tokens: Int
-            
-            var id: String {
-                "\(timestamp.formatted(.iso8601))-\(kind.rawValue)"
-            }
-            
-            enum Kind: String {
-                case prompt
-                case completion
-                
-                var label: String {
-                    switch self {
-                        case .prompt: "Prompt"
-                        case .completion: "Completion"
-                    }
                 }
             }
         }
