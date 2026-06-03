@@ -4,6 +4,7 @@ enum ModelKind {
     case macBookPro
     case macMini
     case macStudio
+    case macPro
 }
 
 extension ModelKind {
@@ -12,6 +13,7 @@ extension ModelKind {
             case .macBookPro: "macbook"
             case .macMini: "macmini"
             case .macStudio: "macstudio"
+            case .macPro: "macpro.gen3"
         }
     }
 }
@@ -71,6 +73,11 @@ enum ModelIdentifier: String, Identifiable {
     case macStudioM2Ultra = "Mac14,14"
     case macStudioM3Ultra = "Mac15,14"
     case macStudioM4Max = "Mac16,9"
+    
+    // MARK: Mac Pro
+    // https://everymac.com/systems/by-identifier/all-mac-pro-model-identifiers.html
+    
+    case macProM2Ultra = "Mac14,8"
 }
 
 extension ModelIdentifier {
@@ -114,6 +121,7 @@ extension ModelIdentifier {
             case .macStudioM2Ultra: "Mac Studio M2 Ultra"
             case .macStudioM3Ultra: "Mac Studio M3 Ultra"
             case .macStudioM4Max: "Mac Studio M4 Max"
+            case .macProM2Ultra: "Mac Pro M2 Ultra"
         }
     }
     
@@ -160,6 +168,8 @@ extension ModelIdentifier {
                     .macStudioM3Ultra,
                     .macStudioM4Max:
                     .macStudio
+            case .macProM2Ultra:
+                    .macPro
         }
     }
 }
