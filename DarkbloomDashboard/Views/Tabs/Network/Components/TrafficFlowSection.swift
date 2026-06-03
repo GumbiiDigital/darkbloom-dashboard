@@ -125,7 +125,7 @@ extension NetworkTab.TrafficFlowSection {
         
         private static func globeCamera(centerLongitude: CLLocationDegrees) -> MapCamera {
             MapCamera(
-                centerCoordinate: CLLocationCoordinate2D(latitude: 0, longitude: centerLongitude),
+                centerCoordinate: CLLocationCoordinate2D(latitude: 45, longitude: centerLongitude),
                 distance: globeDistance,
                 heading: 0,
                 pitch: 0
