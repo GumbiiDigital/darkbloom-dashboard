@@ -10,7 +10,7 @@
 
 Anyone with a sufficiently powerful Mac (MacBook Pro, Mac Studio, etc.) can run the Darkbloom software and become a provider by hosting local AI models and running private inference for users of the network.
 
-Modern Macs featuring unified memory, high memory bandwidth and verifiable trust through mobile device attestation, secure root and other technologies, it's entirely possible to run local inference in a way that's both secure and economical.
+Modern Macs featuring unified memory, high memory bandwidth and verifiable trust through mobile device attestation, secure root and other technologies, make it entirely possible to run local inference in a way that's both secure and economical.
 
 ## Features
 
