@@ -41,7 +41,7 @@ final class LocalServiceController {
         launchctlTask?.cancel()
         launchctlTask = Task {
             while !Task.isCancelled {
-                if let (exists, running) = try? self.fetchStatus() {
+                if let (exists, running) = try? await self.fetchStatus() {
                     self.processExists = exists
                     self.processIsRunning = running
                 }
@@ -75,8 +75,8 @@ final class LocalServiceController {
         return serial
     }
     
-    private func fetchStatus() throws -> (exists: Bool, running: Bool)? {
-        guard let launchctlOutput = try? run("/bin/launchctl", ["list"]) else { return nil }
+    private func fetchStatus() async throws -> (exists: Bool, running: Bool)? {
+        guard let launchctlOutput = try? await run("/bin/launchctl", ["list"]) else { return nil }
         let re = /(?P<pid>\d+|-)\s+(?P<status>\d+)\s+(?P<service>[\w.]+)/
         for line in launchctlOutput.split(separator: "\n") {
             guard let result = try? re.firstMatch(in: line) else { continue }
@@ -107,25 +107,25 @@ final class LocalServiceController {
         }
     }
     
-    func stopDarkbloom(at path: String) throws {
+    func stopDarkbloom(at path: String) async throws {
         print("Stopping darkbloom...")
-        let stopOutput = try run(path, ["stop"])
+        let stopOutput = try await run(path, ["stop"])
         print("-> \(stopOutput)")
     }
     
-    func startDarkbloom(at path: String) throws {
+    func startDarkbloom(at path: String) async throws {
         print("Starting darkbloom...")
-        let startOutput = try run(path, ["start", "--all"])
+        let startOutput = try await run(path, ["start", "--all"])
         print("-> \(startOutput)")
     }
 
-    func restartRemoteDarkbloom(target: MachineRestartTarget) throws {
+    func restartRemoteDarkbloom(target: MachineRestartTarget) async throws {
         print("Restarting darkbloom on remote target: \(target.user)@\(target.host) (\(target.serialNumber))...")
-        let restartOutput = try run("/usr/bin/ssh", target.sshRestartArguments)
+        let restartOutput = try await run("/usr/bin/ssh", target.sshRestartArguments)
         print("-> \(restartOutput)")
     }
     
-    private func run(_ executable: String, _ arguments: [String]) throws -> String {
+    @concurrent private func run(_ executable: String, _ arguments: [String]) async throws -> String {
         let process = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()

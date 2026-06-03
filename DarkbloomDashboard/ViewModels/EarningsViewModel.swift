@@ -10,11 +10,13 @@ struct ProjectedEarnings: Equatable {
 final class EarningsViewModel {
     private(set) var projectedEarnings: ProjectedEarnings?
     
-    func calculateProjections(basedOn changes: [BalanceChange]) {
+    @concurrent func calculateProjections(basedOn changes: [BalanceChange]) async {
         let sortedChanges = changes.sorted { $0.date < $1.date }
         
         guard sortedChanges.count >= 2 else {
-            projectedEarnings = nil
+            await MainActor.run {
+                self.projectedEarnings = nil
+            }
             return
         }
         
@@ -28,7 +30,9 @@ final class EarningsViewModel {
         let observedSeconds = lastDate.timeIntervalSince(firstDate)
         
         guard observedSeconds > 0 else {
-            projectedEarnings = nil
+            await MainActor.run {
+                self.projectedEarnings = nil
+            }
             return
         }
         
@@ -38,10 +42,12 @@ final class EarningsViewModel {
         let week: TimeInterval = day * 7
         let month: TimeInterval = day * 30
         
-        self.projectedEarnings = ProjectedEarnings(
-            projectedEarnings24h: earningsPerSecond * day,
-            projectedEarningsPerWeek: earningsPerSecond * week,
-            projectedEarningsPerMonth: earningsPerSecond * month
-        )
+        await MainActor.run {
+            self.projectedEarnings = ProjectedEarnings(
+                projectedEarnings24h: earningsPerSecond * day,
+                projectedEarningsPerWeek: earningsPerSecond * week,
+                projectedEarningsPerMonth: earningsPerSecond * month
+            )
+        }
     }
 }

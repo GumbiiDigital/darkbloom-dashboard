@@ -41,7 +41,7 @@ extension OverviewTab {
                 }
                 
                 restartingStep = "Stopping darkbloom service on this Mac..."
-                try? localServiceController.stopDarkbloom(at: darkbloomPath)
+                try? await localServiceController.stopDarkbloom(at: darkbloomPath)
                 
                 // Fetch network info (machine should be offline)
                 if let apiKey = settings.apiKey {
@@ -50,11 +50,11 @@ extension OverviewTab {
                 }
                 
                 restartingStep = "Starting darkbloom service on this Mac..."
-                try? localServiceController.startDarkbloom(at: darkbloomPath)
+                try? await localServiceController.startDarkbloom(at: darkbloomPath)
             } else if let target = settings.remoteRestartTargets[serialNumber] {
                 restartingStep = "Restarting \(label(for: serialNumber)) over SSH..."
                 do {
-                    try localServiceController.restartRemoteDarkbloom(target: target)
+                    try await localServiceController.restartRemoteDarkbloom(target: target)
                 } catch {
                     print(error)
                     restartingStep = "Unable to restart \(label(for: serialNumber)): \(error.localizedDescription)"

@@ -32,8 +32,8 @@ struct ContentView: View {
     
     var body: some View {
         platformContent
-            .onChange(of: dataController.balanceChanges) {
-                earningsController.calculateProjections(basedOn: dataController.balanceChanges)
+            .task(id: dataController.balanceChanges) {
+                await earningsController.calculateProjections(basedOn: dataController.balanceChanges)
             }
             .onChange(of: settings.apiKey) {
                 guard let apiKey = settings.apiKey else { return }
