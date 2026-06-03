@@ -7,3 +7,9 @@ struct DarkbloomTimeSeriesEntry: Decodable {
     let completionTokens: Int
     let requests: Int
 }
+
+extension DarkbloomTimeSeriesEntry: Identifiable {
+    var id: String {
+        "\(timestamp.formatted(.iso8601))-\(totalTokens)-\(requests)"
+    }
+}

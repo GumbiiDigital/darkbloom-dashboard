@@ -19,6 +19,16 @@ struct ContentView_iOS: View {
                 }
             }
             Tab(
+                SidebarTab.network.title,
+                systemImage: SidebarTab.network.systemImage,
+                value: .network
+            ) {
+                NavigationStack {
+                    NetworkTab()
+                        .navigationTitle(SidebarTab.network.title)
+                }
+            }
+            Tab(
                 SidebarTab.earnings.title,
                 systemImage: SidebarTab.earnings.systemImage,
                 value: .earnings

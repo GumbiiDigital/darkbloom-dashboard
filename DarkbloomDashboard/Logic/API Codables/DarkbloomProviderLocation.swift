@@ -1,6 +1,6 @@
 import Foundation
 
-struct DarkbloomProviderLocation: Decodable {
+struct DarkbloomProviderLocation: Decodable, Hashable {
     let key: String
     let scope: DarkbloomLocationScope
     let city: String
