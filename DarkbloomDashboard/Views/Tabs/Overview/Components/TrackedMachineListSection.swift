@@ -3,7 +3,7 @@ import FiveKit
 
 extension OverviewTab {
     struct TrackedMachineListSection: View {
-        @Environment(ContentViewModel.self) private var viewModel
+        @Environment(APIDataController.self) private var viewModel
         
         @State private var showAddMachineAlert: Bool = false
         @State private var newMachineSerialNumber: String = ""
@@ -76,7 +76,7 @@ extension OverviewTab {
 #Preview {
     Form {
         OverviewTab.TrackedMachineListSection()
-            .environment(ContentViewModel())
+            .environment(APIDataController())
     }
     .formStyle(.grouped)
 }

@@ -2,7 +2,7 @@ import SwiftUI
 import FiveKit
 
 struct OverviewTab: View {
-    @Environment(ContentViewModel.self) private var viewModel
+    @Environment(APIDataController.self) private var viewModel
     
     #if os(macOS)
     @Environment(LocalServiceController.self) private var localServiceController: LocalServiceController?
@@ -37,10 +37,10 @@ struct OverviewTab: View {
 #Preview {
     #if os(macOS)
     OverviewTab()
-        .environment(ContentViewModel())
+        .environment(APIDataController())
         .environment(LocalServiceController())
     #else
     OverviewTab()
-        .environment(ContentViewModel())
+        .environment(APIDataController())
     #endif
 }

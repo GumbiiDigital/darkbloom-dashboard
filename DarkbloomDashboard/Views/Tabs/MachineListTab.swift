@@ -25,5 +25,5 @@ struct MachineListTab: View {
     NavigationStack {
         MachineListTab()
     }
-    .environment(ContentViewModel())
+    .environment(APIDataController())
 }

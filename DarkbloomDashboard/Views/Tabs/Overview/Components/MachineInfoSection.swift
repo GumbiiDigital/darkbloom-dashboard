@@ -72,7 +72,7 @@ extension OverviewTab {
 }
 
 #Preview {
-    @Previewable @State var viewModel = ContentViewModel()
+    @Previewable @State var viewModel = APIDataController()
     
     Form {
         OverviewTab.MachineInfoSection(

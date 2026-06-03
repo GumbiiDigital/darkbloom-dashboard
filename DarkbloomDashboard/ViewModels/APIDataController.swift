@@ -6,7 +6,7 @@ struct BalanceChange: Equatable {
 }
 
 @MainActor @Observable
-final class ContentViewModel {
+final class APIDataController {
     private var client: DarkbloomClient?
     
     private var statsAndAttestationsTask: Task<Void, any Error>?

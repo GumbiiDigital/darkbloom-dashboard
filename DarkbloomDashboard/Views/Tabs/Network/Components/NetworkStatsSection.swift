@@ -3,7 +3,7 @@ import FiveKit
 
 extension NetworkTab {
     struct NetworkStatsSection: View {
-        @Environment(ContentViewModel.self) private var contentViewModel
+        @Environment(APIDataController.self) private var dataController
         
         let stats: DarkbloomStats
         
@@ -28,7 +28,7 @@ extension NetworkTab {
                 }
                 
                 LabeledContent {
-                    let trustedProviderCount = contentViewModel.machineInfo.values.count(where: \.trust.isTrusted)
+                    let trustedProviderCount = dataController.machineInfo.values.count(where: \.trust.isTrusted)
                     Text(trustedProviderCount, format: .number.notation(.compactName))
                 } label: {
                     Text("Providers Trusted")
@@ -41,7 +41,7 @@ extension NetworkTab {
 }
 
 #Preview {
-    @Previewable @State var viewModel = ContentViewModel()
+    @Previewable @State var viewModel = APIDataController()
     
     Form {
         if let stats = viewModel.stats {

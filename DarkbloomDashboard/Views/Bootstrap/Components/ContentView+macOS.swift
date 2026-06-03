@@ -3,7 +3,7 @@
 import SwiftUI
 
 struct ContentView_macOS: View {
-    @Environment(LogsViewModel.self) private var logsViewModel
+    @Environment(LocalLogController.self) private var logsViewModel
     @Environment(LocalServiceController.self) private var localServiceController
     
     @Bindable private var navigation = NavigationController.shared
@@ -66,8 +66,8 @@ struct ContentView_macOS: View {
 
 #Preview {
     ContentView_macOS()
-        .environment(ContentViewModel())
-        .environment(LogsViewModel())
+        .environment(APIDataController())
+        .environment(LocalLogController())
 }
 
 #endif

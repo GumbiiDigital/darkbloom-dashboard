@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct EarningsTab: View {
-    @Environment(ContentViewModel.self) private var contentViewModel
-    @Environment(EarningsViewModel.self) private var earningsViewModel
+    @Environment(APIDataController.self) private var dataController
+    @Environment(EarningsViewModel.self) private var earningsController
     
     var body: some View {
         Form {
             Section {
-                if let balance = contentViewModel.balance {
+                if let balance = dataController.balance {
                     Text(balance.formatted).font(.largeTitle)
                 } else {
                     HStack {
@@ -20,7 +20,7 @@ struct EarningsTab: View {
             }
             
             Section {
-                if let projectedEarnings = earningsViewModel.projectedEarnings {
+                if let projectedEarnings = earningsController.projectedEarnings {
                     LabeledContent {
                         Text(projectedEarnings.projectedEarnings24h.formatted(.currency(code: "USD")))
                     } label: {
@@ -50,5 +50,5 @@ struct EarningsTab: View {
 
 #Preview {
     EarningsTab()
-        .environment(ContentViewModel())
+        .environment(APIDataController())
 }

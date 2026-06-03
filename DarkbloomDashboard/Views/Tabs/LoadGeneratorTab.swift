@@ -4,7 +4,7 @@ import SwiftUI
 import FiveKit
 
 struct LoadGeneratorTab: View {
-    @Environment(LoadTestingViewModel.self) private var loadTest
+    @Environment(LoadTestingController.self) private var loadTest
     
     @State private var showApiKeyPrompt: Bool = false
     @State private var newApiKey: String = ""
@@ -143,7 +143,7 @@ struct LoadGeneratorTab: View {
 
 #Preview {
     LoadGeneratorTab()
-        .environment(LoadTestingViewModel())
+        .environment(LoadTestingController())
 }
 
 #endif

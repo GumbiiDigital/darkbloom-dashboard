@@ -2,13 +2,13 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var contentViewModel = ContentViewModel()
-    @State private var earningsViewModel = EarningsViewModel()
+    @State private var dataController = APIDataController()
+    @State private var earningsController = EarningsViewModel()
     
     #if os(macOS)
-    @State private var loadTestingViewModel = LoadTestingViewModel()
+    @State private var loadTestingController = LoadTestingController()
     @State private var localServiceController = LocalServiceController()
-    @State private var logsViewModel = LogsViewModel()
+    @State private var localLogController = LocalLogController()
     #endif
     
     private let settings = Settings.shared
@@ -18,28 +18,28 @@ struct ContentView: View {
             #if os(macOS)
             ContentView_macOS()
                 .environment(localServiceController)
-                .environment(loadTestingViewModel)
-                .environment(logsViewModel)
+                .environment(loadTestingController)
+                .environment(localLogController)
             #elseif os(iOS)
             ContentView_iOS()
             #else
             #error("Unsupported platform.")
             #endif
         }
-        .environment(contentViewModel)
-        .environment(earningsViewModel)
+        .environment(dataController)
+        .environment(earningsController)
     }
     
     var body: some View {
         platformContent
-            .onChange(of: contentViewModel.balanceChanges) {
-                earningsViewModel.calculateProjections(basedOn: contentViewModel.balanceChanges)
+            .onChange(of: dataController.balanceChanges) {
+                earningsController.calculateProjections(basedOn: dataController.balanceChanges)
             }
             .onChange(of: settings.apiKey) {
                 guard let apiKey = settings.apiKey else { return }
                 Task {
                     do {
-                        try await contentViewModel.update(apiKey: apiKey)
+                        try await dataController.update(apiKey: apiKey)
                     } catch {
                         print(error)
                     }

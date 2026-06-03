@@ -88,7 +88,7 @@ extension NetworkTab {
 }
 
 #Preview {
-    @Previewable @State var viewModel = ContentViewModel()
+    @Previewable @State var viewModel = APIDataController()
     
     Form {
         if let stats = viewModel.stats {

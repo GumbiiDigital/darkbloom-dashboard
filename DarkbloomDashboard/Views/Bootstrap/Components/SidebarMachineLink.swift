@@ -2,7 +2,7 @@ import SwiftUI
 import FiveKit
 
 struct SidebarMachineLink: View {
-    @Environment(ContentViewModel.self) private var viewModel
+    @Environment(APIDataController.self) private var viewModel
     
     let serialNo: String
     
@@ -69,7 +69,7 @@ struct SidebarMachineLink: View {
 #Preview {
     List {
         SidebarMachineLink(serialNo: "NJD6MGW279")
-            .environment(ContentViewModel())
+            .environment(APIDataController())
     }
     .listStyle(.sidebar)
 }

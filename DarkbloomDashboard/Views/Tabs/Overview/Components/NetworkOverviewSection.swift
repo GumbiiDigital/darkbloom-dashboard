@@ -3,7 +3,7 @@ import FiveKit
 
 extension OverviewTab {
     struct NetworkOverviewSection: View {
-        @Environment(ContentViewModel.self) private var viewModel
+        @Environment(APIDataController.self) private var viewModel
         
         let stats: DarkbloomStats
         
@@ -30,7 +30,7 @@ extension OverviewTab {
 }
 
 #Preview {
-    @Previewable @State var viewModel = ContentViewModel()
+    @Previewable @State var viewModel = APIDataController()
     
     Form {
         if let stats = viewModel.stats {

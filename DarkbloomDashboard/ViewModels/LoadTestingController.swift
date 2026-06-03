@@ -4,7 +4,7 @@ import Foundation
 import OpenAI
 
 @MainActor @Observable
-final class LoadTestingViewModel {
+final class LoadTestingController {
     private let requestsPerApiKeyPerWave = 2
     
     private(set) var inProgress: Bool = false

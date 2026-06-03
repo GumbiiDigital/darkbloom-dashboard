@@ -4,7 +4,7 @@ import SwiftUI
 import FiveKit
 
 struct SidebarLoadTestingLink: View {
-    @Environment(LoadTestingViewModel.self) private var viewModel
+    @Environment(LoadTestingController.self) private var viewModel
     
     var body: some View {
         let value = SidebarTab.loadGenerator
@@ -26,7 +26,7 @@ struct SidebarLoadTestingLink: View {
 #Preview {
     List {
         SidebarLoadTestingLink()
-            .environment(LoadTestingViewModel())
+            .environment(LoadTestingController())
     }
     .listStyle(.sidebar)
 }

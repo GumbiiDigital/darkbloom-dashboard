@@ -5,7 +5,7 @@ import FiveKit
 import OSLog
 
 struct LogsTab: View {
-    @Environment(LogsViewModel.self) private var viewModel
+    @Environment(LocalLogController.self) private var viewModel
     
     var body: some View {
         Form {
@@ -112,7 +112,7 @@ struct LogEntryView: View {
 
 #Preview {
     LogsTab()
-        .environment(LogsViewModel())
+        .environment(LocalLogController())
 }
 
 #endif

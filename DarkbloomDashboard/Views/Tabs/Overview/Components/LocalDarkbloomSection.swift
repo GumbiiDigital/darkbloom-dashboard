@@ -5,7 +5,7 @@ import FiveKit
 
 extension OverviewTab {
     struct LocalDarkbloomSection: View {
-        @Environment(ContentViewModel.self) private var contentViewModel
+        @Environment(APIDataController.self) private var dataController
         
         @State private var isRestarting: Bool = false
         @State private var restartingStep: String?
@@ -46,7 +46,7 @@ extension OverviewTab {
                 // Fetch network info (machine should be offline)
                 if let apiKey = settings.apiKey {
                     try? await Task.sleep(for: .seconds(5))
-                    try? await contentViewModel.update(apiKey: apiKey)
+                    try? await dataController.update(apiKey: apiKey)
                 }
                 
                 restartingStep = "Starting darkbloom service on this Mac..."
@@ -78,8 +78,8 @@ extension OverviewTab {
             let onlineCheckStartDate = Date.now
             while true {
                 try? await Task.sleep(for: .seconds(5))
-                try? await contentViewModel.update(apiKey: apiKey)
-                if contentViewModel.machineInfo[serialNumber]?.trust.isOnline == true {
+                try? await dataController.update(apiKey: apiKey)
+                if dataController.machineInfo[serialNumber]?.trust.isOnline == true {
                     break
                 }
                 if onlineCheckStartDate.timeIntervalUntilNow > 120 {
@@ -93,8 +93,8 @@ extension OverviewTab {
             let trustCheckStartDate = Date.now
             while true {
                 try? await Task.sleep(for: .seconds(5))
-                try? await contentViewModel.update(apiKey: apiKey)
-                if let machine = contentViewModel.machineInfo[serialNumber], machine.trust.isTrusted {
+                try? await dataController.update(apiKey: apiKey)
+                if let machine = dataController.machineInfo[serialNumber], machine.trust.isTrusted {
                     break
                 }
                 if trustCheckStartDate.timeIntervalUntilNow > 120 {
@@ -105,7 +105,7 @@ extension OverviewTab {
             }
             
             restartingStep = "Warming up models..."
-            try? await contentViewModel.warmup(serialNumber: serialNumber)
+            try? await dataController.warmup(serialNumber: serialNumber)
             
             restartingStep = "Done"
             try? await Task.sleep(for: .seconds(5))
@@ -137,7 +137,7 @@ extension OverviewTab {
             if serialNumber == localServiceController.currentMachineSerialNumber {
                 return "This Mac (\(serialNumber))"
             }
-            if let displayName = contentViewModel.machineInfo[serialNumber]?.hardware.modelDisplayName {
+            if let displayName = dataController.machineInfo[serialNumber]?.hardware.modelDisplayName {
                 return "\(displayName) (\(serialNumber))"
             }
             return serialNumber

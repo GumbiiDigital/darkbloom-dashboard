@@ -20,7 +20,7 @@ struct DarkbloomLogEntry: Equatable, Identifiable {
 }
 
 @MainActor @Observable
-final class LogsViewModel {
+final class LocalLogController {
     private let subsystem = "dev.darkbloom.provider"
     private let maxLogEntries: Int = 2_000
     

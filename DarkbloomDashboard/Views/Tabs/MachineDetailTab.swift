@@ -2,7 +2,7 @@ import SwiftUI
 import FiveKit
 
 struct MachineDetailTab: View {
-    @Environment(ContentViewModel.self) private var viewModel
+    @Environment(APIDataController.self) private var viewModel
     
     let serialNo: String
     
@@ -121,7 +121,7 @@ extension MachineDetailTab {
     }
     
     struct NetworkSection: View {
-        @Environment(ContentViewModel.self) private var contentViewModel
+        @Environment(APIDataController.self) private var dataController
         @State private var warmupInProgress: Bool = false
         
         let serialNo: String
@@ -149,7 +149,7 @@ extension MachineDetailTab {
                     Button {
                         warmupInProgress = true
                         Task {
-                            try? await contentViewModel.warmup(serialNumber: serialNo)
+                            try? await dataController.warmup(serialNumber: serialNo)
                             warmupInProgress = false
                         }
                     } label: {
@@ -165,5 +165,5 @@ extension MachineDetailTab {
 
 #Preview {
     MachineDetailTab(serialNo: "NJD6MGW279")
-        .environment(ContentViewModel())
+        .environment(APIDataController())
 }

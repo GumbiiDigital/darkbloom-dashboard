@@ -4,11 +4,11 @@ import MapKit
 import FiveKit
 
 struct NetworkTab: View {
-    @Environment(ContentViewModel.self) private var contentViewModel
+    @Environment(APIDataController.self) private var dataController
     
     var body: some View {
         Form {
-            if let stats = contentViewModel.stats {
+            if let stats = dataController.stats {
                 NetworkStatsSection(stats: stats)
                 TrafficTimeSeriesSection(stats: stats)
                 TokenDistributionSection(stats: stats)
@@ -21,6 +21,6 @@ struct NetworkTab: View {
 
 #Preview {
     NetworkTab()
-        .environment(ContentViewModel())
+        .environment(APIDataController())
         .frame(minHeight: 600)
 }

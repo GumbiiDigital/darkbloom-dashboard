@@ -43,7 +43,7 @@ extension NetworkTab {
 
 extension NetworkTab.TrafficFlowSection {
     struct TrafficFlowGraph: View {
-        @Environment(ContentViewModel.self) private var contentViewModel
+        @Environment(APIDataController.self) private var dataController
         
         private static let globeDistance: CLLocationDistance = 30_000_000
         private static let globeSpinDegreesPerSecond: CLLocationDegrees = 8
@@ -83,7 +83,7 @@ extension NetworkTab.TrafficFlowSection {
         
         var body: some View {
             Map(position: $position, interactionModes: [.pan, .zoom], selection: $selection) {
-                if let stats = contentViewModel.stats {
+                if let stats = dataController.stats {
                     let minMaxProviders = stats.providerLocations.minmax(byValue: \.providers)
                     let minProviders = minMaxProviders?.min ?? 0
                     let maxProviders = minMaxProviders?.max ?? 1
@@ -224,7 +224,7 @@ extension NetworkTab.TrafficFlowSection {
 }
 
 #Preview {
-    @Previewable @State var viewModel = ContentViewModel()
+    @Previewable @State var viewModel = APIDataController()
     
     Form {
         if let stats = viewModel.stats {
