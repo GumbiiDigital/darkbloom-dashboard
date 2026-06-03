@@ -14,6 +14,7 @@ final class DarkbloomClient {
         self.apiKey = apiKey
         self.decoder = JSONDecoder()
         self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.decoder.dateDecodingStrategy = .iso8601
     }
     
     private func fetch<T>(_ url: URL) async throws -> T where T: Decodable {
