@@ -107,7 +107,7 @@ extension NetworkTab.TrafficFlowSection {
                 var lastFrame = Date.now
                 
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(0.33))
+                    try? await Task.sleep(for: .milliseconds(33))
                     
                     let now = Date.now
                     let elapsed = now.timeIntervalSince(lastFrame)
@@ -306,7 +306,7 @@ extension NetworkTab.TrafficFlowSection {
                 .stroke(
                     directionalColor,
                     style: StrokeStyle(
-                        lineWidth: 1,
+                        lineWidth: 2,
                         dash: [2, 10],
                         dashPhase: dashPhase
                     )
