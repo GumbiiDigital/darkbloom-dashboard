@@ -167,12 +167,13 @@ extension DashboardTab {
                 restartingStep = "Starting darkbloom service on this Mac..."
                 try? localServiceController.startDarkbloom(at: darkbloomPath)
             } else if let target = settings.remoteRestartTargets[serialNumber] {
-                restartingStep = "Restarting \(target.displayName) over SSH..."
+                restartingStep = "Restarting \(label(for: serialNumber)) over SSH..."
                 do {
                     try localServiceController.restartRemoteDarkbloom(target: target)
                 } catch {
-                    restartingStep = "Unable to restart \(target.displayName): \(error.localizedDescription)"
-                    try? await Task.sleep(for: .seconds(8))
+                    print(error)
+                    restartingStep = "Unable to restart \(label(for: serialNumber)): \(error.localizedDescription)"
+                    try? await Task.sleep(for: .seconds(5))
                     return
                 }
             } else {
@@ -248,11 +249,11 @@ extension DashboardTab {
         }
 
         private func label(for serialNumber: String) -> String {
-            if let target = settings.remoteRestartTargets[serialNumber] {
-                return "\(target.displayName) (\(serialNumber))"
-            }
             if serialNumber == localServiceController.currentMachineSerialNumber {
                 return "This Mac (\(serialNumber))"
+            }
+            if let displayName = contentViewModel.machineInfo[serialNumber]?.hardware.modelDisplayName {
+                return "\(displayName) (\(serialNumber))"
             }
             return serialNumber
         }
@@ -275,7 +276,6 @@ extension DashboardTab {
             settings.setRemoteRestartTarget(
                 MachineRestartTarget(
                     serialNumber: restartSelection,
-                    displayName: restartSelection,
                     user: trimmedUser,
                     host: trimmedHost
                 )
@@ -297,6 +297,7 @@ extension DashboardTab {
 
                 Picker("Restart Target", selection: $restartSelection) {
                     Text("All tracked machines").tag(allRestartSelection)
+                    Divider()
                     ForEach(restartableSerialNumbers, id: \.self) { serialNumber in
                         Text(label(for: serialNumber)).tag(serialNumber)
                     }

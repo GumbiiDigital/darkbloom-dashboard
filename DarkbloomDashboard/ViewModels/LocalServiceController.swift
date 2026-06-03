@@ -7,7 +7,6 @@ struct MachineRestartTarget: Codable, Equatable, Identifiable {
     var id: String { serialNumber }
 
     let serialNumber: String
-    let displayName: String
     let user: String
     let host: String
 
@@ -121,7 +120,7 @@ final class LocalServiceController {
     }
 
     func restartRemoteDarkbloom(target: MachineRestartTarget) throws {
-        print("Restarting darkbloom on \(target.displayName)...")
+        print("Restarting darkbloom on remote target: \(target.user)@\(target.host) (\(target.serialNumber))...")
         let restartOutput = try run("/usr/bin/ssh", target.sshRestartArguments)
         print("-> \(restartOutput)")
     }

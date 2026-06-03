@@ -44,7 +44,6 @@ struct Darkbloom_DashboardTests {
     @Test func remoteRestartTargetCanRoundTripThroughJson() async throws {
         let target = MachineRestartTarget(
             serialNumber: "SERIAL123",
-            displayName: "Lab Mac",
             user: "provider",
             host: "lab-mac.tailnet.example"
         )
@@ -58,7 +57,6 @@ struct Darkbloom_DashboardTests {
     @Test func remoteRestartArgumentsUseBatchModeSsh() async throws {
         let target = MachineRestartTarget(
             serialNumber: "SERIAL123",
-            displayName: "Lab Mac",
             user: "provider",
             host: "lab-mac.tailnet.example"
         )
