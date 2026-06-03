@@ -180,7 +180,7 @@ extension NetworkTab.TrafficFlowSection {
         }
         
         var body: some MapContent {
-            let size: CGFloat = CGFloat.lerp(a: 12, b: 20, t: t())
+            let size: CGFloat = CGFloat.lerp(a: 12, b: 20, t: t().clamp01())
             
             Annotation(
                 coordinate: coordinate,
@@ -242,7 +242,7 @@ extension NetworkTab.TrafficFlowSection {
         }
         
         var body: some MapContent {
-            let size: CGFloat = CGFloat.lerp(a: 8, b: 16, t: t())
+            let size: CGFloat = CGFloat.lerp(a: 8, b: 16, t: t().clamp01())
             
             Annotation(
                 coordinate: coordinate,
