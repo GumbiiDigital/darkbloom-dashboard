@@ -34,7 +34,7 @@ struct ContentView_macOS: View {
             Group {
                 switch navigation.activeTab {
                     case .overview:
-                        DashboardTab()
+                        OverviewTab()
                     case .earnings:
                         EarningsTab()
                     case .machine(let serialNo):

@@ -113,20 +113,7 @@ extension MachineDetailTab {
                 HStack {
                     Text("Trust & Attestation")
                     Spacer()
-                    if trust.isTrusted {
-                        HStack {
-                            Text(Image(systemName: "shield.fill"))
-                            Text("Trusted")
-                        }
-                        .foregroundStyle(.green)
-                    } else {
-                        HStack {
-                            Text(Image(systemName: "shield.slash.fill"))
-                            Text("Reduced Trust")
-                            DashboardTab.TrustExplanationButton(trust: trust)
-                        }
-                        .foregroundStyle(.yellow)
-                    }
+                    TrustExplanationButton(trust: trust)
                 }
             }
             .animation(.snappy, value: trust)

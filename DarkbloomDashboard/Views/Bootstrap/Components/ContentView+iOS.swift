@@ -14,7 +14,7 @@ struct ContentView_iOS: View {
                 value: .overview
             ) {
                 NavigationStack {
-                    DashboardTab()
+                    OverviewTab()
                         .navigationTitle(SidebarTab.overview.title)
                 }
             }
