@@ -1,6 +1,7 @@
 #if os(macOS)
 
 import Foundation
+import IOKit
 
 struct MachineRestartTarget: Codable, Equatable, Identifiable {
     var id: String { serialNumber }
@@ -28,7 +29,13 @@ final class LocalServiceController {
     private(set) var processExists: Bool = false
     private(set) var processIsRunning: Bool?
     
+    private(set) var currentMachineSerialNumber: String?
+    
     init() {
+    }
+    
+    func setup() {
+        currentMachineSerialNumber = getSerialNumber()
     }
     
     func startObservation() {
@@ -47,6 +54,26 @@ final class LocalServiceController {
     func stopObservation() {
         launchctlTask?.cancel()
         launchctlTask = nil
+    }
+    
+    private func getSerialNumber() -> String? {
+        let platformExpert = IOServiceGetMatchingService(
+            kIOMainPortDefault,
+            IOServiceMatching("IOPlatformExpertDevice")
+        )
+        guard platformExpert != 0 else { return nil }
+        defer {
+            IOObjectRelease(platformExpert)
+        }
+        guard let serial = IORegistryEntryCreateCFProperty(
+            platformExpert,
+            "IOPlatformSerialNumber" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() as? String else {
+            return nil
+        }
+        return serial
     }
     
     private func fetchStatus() throws -> (exists: Bool, running: Bool)? {

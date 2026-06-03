@@ -51,6 +51,7 @@ struct ContentView_macOS: View {
         }
         .onAppear {
             logsViewModel.startStreaming()
+            localServiceController.setup()
             localServiceController.startObservation()
         }
         .onDisappear() {

@@ -2,10 +2,6 @@ import SwiftUI
 import FiveKit
 import OpenAI
 
-#if canImport(IOKit)
-import IOKit
-#endif
-
 struct DashboardTab: View {
     @Environment(ContentViewModel.self) private var viewModel
     
@@ -142,32 +138,16 @@ extension DashboardTab {
         }
 
         private var isRemoteRestartSelection: Bool {
-            restartSelection != allRestartSelection && restartSelection != getSerialNumber()
-        }
-        
-        private func getSerialNumber() -> String? {
-            let platformExpert = IOServiceGetMatchingService(
-                kIOMainPortDefault,
-                IOServiceMatching("IOPlatformExpertDevice")
-            )
-            guard platformExpert != 0 else { return nil }
-            defer {
-                IOObjectRelease(platformExpert)
-            }
-            guard let serial = IORegistryEntryCreateCFProperty(
-                platformExpert,
-                "IOPlatformSerialNumber" as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? String else {
-                return nil
-            }
-            return serial
+            let nonRemoteTargets: [String] = [
+                allRestartSelection,
+                localServiceController.currentMachineSerialNumber
+            ].compactMap(\.self)
+            return !nonRemoteTargets.contains(restartSelection)
         }
         
         private func restart(serialNumber: String) async {
             restartingStep = "Determining darkbloom location..."
-            let localSerialNumber = getSerialNumber()
+            let localSerialNumber = localServiceController.currentMachineSerialNumber
             if serialNumber == localSerialNumber {
                 guard let darkbloomPath = try? localServiceController.fetchDarkbloomLocation() else {
                     restartingStep = "Unable to find darkbloom."
@@ -271,7 +251,7 @@ extension DashboardTab {
             if let target = settings.remoteRestartTargets[serialNumber] {
                 return "\(target.displayName) (\(serialNumber))"
             }
-            if serialNumber == getSerialNumber() {
+            if serialNumber == localServiceController.currentMachineSerialNumber {
                 return "This Mac (\(serialNumber))"
             }
             return serialNumber
