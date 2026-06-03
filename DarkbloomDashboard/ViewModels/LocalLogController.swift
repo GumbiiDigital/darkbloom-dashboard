@@ -25,8 +25,11 @@ final class LocalLogController {
     private let maxLogEntries: Int = 2_000
     
     private(set) var logs: [DarkbloomLogEntry] = []
+    private(set) var lastFetchDate = Date.now
+    private(set) var isUpdating: Bool = false
+    
     private var streamTask: Task<Void, Never>?
-    private var lastFetchDate = Date.now
+    private var didFetchHistoricalLogs: Bool = false
     
     var unseenLogCount: Int = 0
     
@@ -37,21 +40,29 @@ final class LocalLogController {
         streamTask = Task {
             
             // Fetch historical logs
-            if let historicalLogs = try? await fetchOlderLogs() {
-                logs.append(contentsOf: historicalLogs.map(DarkbloomLogEntry.init))
-                
-                if let latest = historicalLogs.last?.date {
-                    lastFetchDate = latest.addingTimeInterval(0.001)
+            if !self.didFetchHistoricalLogs {
+                self.isUpdating = true
+                if let historicalLogs = try? await fetchOlderLogs() {
+                    logs.append(contentsOf: historicalLogs.map(DarkbloomLogEntry.init))
+                    
+                    if let latest = historicalLogs.last?.date {
+                        lastFetchDate = latest.addingTimeInterval(0.001)
+                    }
+                    
+                    if logs.count > maxLogEntries {
+                        logs.removeFirst(logs.count - maxLogEntries)
+                    }
                 }
-                
-                if logs.count > maxLogEntries {
-                    logs.removeFirst(logs.count - maxLogEntries)
-                }
+                self.didFetchHistoricalLogs = true
+                self.isUpdating = false
             }
             
             // Keep fetching latest logs
             while !Task.isCancelled {
+                self.isUpdating = true
+                
                 guard let newEntries = try? await fetchLogsSince(lastFetchDate) else {
+                    self.isUpdating = false
                     try? await Task.sleep(for: .seconds(1))
                     continue
                 }
@@ -70,6 +81,7 @@ final class LocalLogController {
                     logs.removeFirst(logs.count - maxLogEntries)
                 }
                 
+                self.isUpdating = false
                 try? await Task.sleep(for: .seconds(1))
             }
         }

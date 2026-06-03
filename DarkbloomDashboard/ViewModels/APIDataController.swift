@@ -19,6 +19,12 @@ final class APIDataController {
     private(set) var balanceChanges: [BalanceChange] = []
     private(set) var machineInfo: [String: MachineInfo] = [:]
     
+    private(set) var lastStatUpdate: Date?
+    private(set) var lastBalanceUpdate: Date?
+    
+    private(set) var isUpdatingStats: Bool = false
+    private(set) var isUpdatingBalance: Bool = false
+    
     enum CustomError: LocalizedError {
         case combinedError([any Error])
         
@@ -55,22 +61,38 @@ final class APIDataController {
     
     func update(apiKey: String) async throws {
         self.client = DarkbloomClient(apiKey: apiKey)
-        
+        self.update()
+    }
+    
+    func updateStatsAndAttestations() {
         self.statsAndAttestationsTask?.cancel()
         self.statsAndAttestationsTask = Task {
             while !Task.isCancelled {
+                self.isUpdatingStats = true
                 try? await self.refreshStatsAndAttestations()
+                self.lastStatUpdate = Date.now
+                self.isUpdatingStats = false
                 try await Task.sleep(for: .seconds(60))
             }
         }
-        
+    }
+    
+    func updateBalance() {
         self.balanceTask?.cancel()
         self.balanceTask = Task {
             while !Task.isCancelled {
+                self.isUpdatingBalance = true
                 try? await self.refreshBalance()
+                self.lastBalanceUpdate = Date.now
+                self.isUpdatingBalance = false
                 try await Task.sleep(for: .seconds(60))
             }
         }
+    }
+    
+    func update() {
+        self.updateStatsAndAttestations()
+        self.updateBalance()
     }
     
     private func refreshStatsAndAttestations() async throws {
