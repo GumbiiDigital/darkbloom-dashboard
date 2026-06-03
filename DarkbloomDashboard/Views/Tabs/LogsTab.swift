@@ -66,6 +66,15 @@ struct LabeledLogComponent<Content: View, Label: View>: View {
 struct LogEntryView: View {
     let entry: DarkbloomLogEntry
     
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        formatter.doesRelativeDateFormatting = false
+        formatter.formattingContext = .standalone
+        return formatter
+    }()
+    
     func pillStyle(for logLevel: OSLogEntryLog.Level) -> PillContentStyle {
         switch entry.level {
             case .notice: .warning
@@ -82,7 +91,7 @@ struct LogEntryView: View {
             
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 LabeledLogComponent {
-                    Text(entry.date.formatted(.iso8601))
+                    Text(dateFormatter.string(from: entry.date))
                 } label: {
                     Text("time")
                 }
