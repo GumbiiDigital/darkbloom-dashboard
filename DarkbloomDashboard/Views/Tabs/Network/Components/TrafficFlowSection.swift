@@ -13,7 +13,7 @@ extension NetworkTab {
         }
         
         @State private var shouldAnimate: Bool = Self.animationDefaultValue
-        @State private var mapStyle: TrafficFlowGraph.FlowMapStyle = .globe
+        @State private var mapStyle: FlowMapStyle = .globe
         
         let stats: DarkbloomStats
         
@@ -27,8 +27,8 @@ extension NetworkTab {
                     #if os(macOS)
                     HStack {
                         Picker("Style", selection: $mapStyle) {
-                            Text("2D").tag(TrafficFlowGraph.FlowMapStyle.flat)
-                            Text("3D").tag(TrafficFlowGraph.FlowMapStyle.globe)
+                            Text("2D").tag(FlowMapStyle.flat)
+                            Text("3D").tag(FlowMapStyle.globe)
                         }
                         .pickerStyle(.segmented)
                         Toggle("Animate", isOn: $shouldAnimate)
@@ -42,6 +42,30 @@ extension NetworkTab {
 }
 
 extension NetworkTab.TrafficFlowSection {
+    enum MapLocation: Hashable {
+        case provider(DarkbloomProviderLocation)
+        case request(DarkbloomRequestLocation)
+    }
+    
+    enum FlowMapStyle: Hashable {
+        case globe
+        case flat
+        
+        var displayName: String {
+            switch self {
+                case .globe: "3D"
+                case .flat: "2D"
+            }
+        }
+        
+        var mapStyle: MapStyle {
+            switch self {
+                case .globe: MapStyle.imagery(elevation: .realistic)
+                case .flat: MapStyle.imagery(elevation: .flat)
+            }
+        }
+    }
+    
     struct TrafficFlowGraph: View {
         @Environment(APIDataController.self) private var dataController
         
@@ -50,30 +74,6 @@ extension NetworkTab.TrafficFlowSection {
         
         @State private var globeLongitude: CLLocationDegrees = 0
         @State private var position: MapCameraPosition = .camera(Self.globeCamera(centerLongitude: 0))
-        
-        enum MapLocation: Hashable {
-            case provider(DarkbloomProviderLocation)
-            case request(DarkbloomRequestLocation)
-        }
-        
-        enum FlowMapStyle: Hashable {
-            case globe
-            case flat
-            
-            var displayName: String {
-                switch self {
-                    case .globe: "3D"
-                    case .flat: "2D"
-                }
-            }
-            
-            var mapStyle: MapStyle {
-                switch self {
-                    case .globe: MapStyle.imagery(elevation: .realistic)
-                    case .flat: MapStyle.imagery(elevation: .flat)
-                }
-            }
-        }
         
         @State private var selection: MapLocation?
         @State private var dashPhase: CGFloat = 0
@@ -84,88 +84,9 @@ extension NetworkTab.TrafficFlowSection {
         var body: some View {
             Map(position: $position, interactionModes: [.pan, .zoom], selection: $selection) {
                 if let stats = dataController.stats {
-                    let minMaxProviders = stats.providerLocations.minmax(byValue: \.providers)
-                    let minProviders = minMaxProviders?.min ?? 0
-                    let maxProviders = minMaxProviders?.max ?? 1
-                    ForEach(stats.providerLocations, id: \.key) { location in
-                        let coordinate = CLLocationCoordinate2D(
-                            latitude: location.latitude,
-                            longitude: location.longitude
-                        )
-                        let t: CGFloat = CGFloat((location.providers - minProviders) / (maxProviders - minProviders))
-                        let size: CGFloat = CGFloat.lerp(a: 12, b: 20, t: t)
-                        Annotation(
-                            coordinate: coordinate,
-                            content: {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .rotation(.degrees(45))
-                                    .fill(Color.accent)
-                                    .frame(width: size, height: size)
-                            },
-                            label: {
-                                VStack(alignment: .leading) {
-                                    Text("\(location.city), \(location.regionCode), \(location.countryCode)").bold()
-                                    Text("\(location.providers) providers")
-                                }
-                            }
-                        )
-                        .mapItemDetailSelectionAccessory(.callout(.full))
-                        .tag(MapLocation.provider(location))
-                    }
-                    
-                    let minMaxRequests = stats.requestLocations.minmax(byValue: \.providers)
-                    let minRequests = minMaxRequests?.min ?? 0
-                    let maxRequests = minMaxRequests?.max ?? 1
-                    ForEach(stats.requestLocations, id: \.key) { location in
-                        let coordinate = CLLocationCoordinate2D(
-                            latitude: location.latitude,
-                            longitude: location.longitude
-                        )
-                        let t: CGFloat = CGFloat((location.providers - minRequests) / (maxProviders - maxRequests))
-                        let size: CGFloat = CGFloat.lerp(a: 8, b: 16, t: t)
-                        Annotation(
-                            coordinate: coordinate,
-                            content: {
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: size, height: size)
-                            },
-                            label: {
-                                VStack(alignment: .leading) {
-                                    Text("\(location.city), \(location.regionCode), \(location.countryCode)").bold()
-                                    Text("\(location.providers) requests")
-                                }
-                            }
-                        )
-                        .mapItemDetailSelectionAccessory(.callout(.full))
-                        .tag(MapLocation.request(location))
-                    }
-                    
-                    ForEach(stats.requestFlows, id: \.key) { flow in
-                        let coordinates: [CLLocationCoordinate2D] = [
-                            CLLocationCoordinate2D(
-                                latitude: flow.from.latitude,
-                                longitude: flow.from.longitude
-                            ),
-                            CLLocationCoordinate2D(
-                                latitude: flow.to.latitude,
-                                longitude: flow.to.longitude
-                            ),
-                        ]
-                        let directionalColor = switch flow.from.kind {
-                            case .provider: Color.green
-                            case .consumer: Color.accent
-                        }
-                        MapPolyline(coordinates: coordinates, contourStyle: .geodesic)
-                            .stroke(
-                                directionalColor,
-                                style: StrokeStyle(
-                                    lineWidth: 1,
-                                    dash: [2, 10],
-                                    dashPhase: dashPhase
-                                )
-                            )
-                    }
+                    ProviderLocationsMapContent(stats: stats)
+                    RequestLocationsMapContent(stats: stats)
+                    RequestFlowsMapContent(stats: stats, dashPhase: dashPhase)
                 }
             }
             .mapStyle(mapStyle.mapStyle)
@@ -219,6 +140,177 @@ extension NetworkTab.TrafficFlowSection {
                 longitude += 360
             }
             return longitude
+        }
+    }
+    
+    private struct ProviderLocationsMapContent: MapContent {
+        let stats: DarkbloomStats
+        
+        var body: some MapContent {
+            let minMaxProviders = stats.providerLocations.minmax(byValue: \.providers)
+            let minProviders = max(0, minMaxProviders?.min ?? 0)
+            let maxProviders = max(1, minMaxProviders?.max ?? 1)
+            
+            ForEach(stats.providerLocations, id: \.key) { location in
+                ProviderLocationAnnotation(
+                    minProviders: minProviders,
+                    maxProviders: maxProviders,
+                    location: location
+                )
+            }
+        }
+    }
+    
+    private struct ProviderLocationAnnotation: MapContent {
+        let minProviders: Int
+        let maxProviders: Int
+        
+        let location: DarkbloomProviderLocation
+        
+        private var coordinate: CLLocationCoordinate2D {
+            CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        }
+        
+        private func t() -> CGFloat {
+            guard maxProviders > minProviders else { return 0 }
+            return CGFloat(location.providers - minProviders) / CGFloat(maxProviders - minProviders)
+        }
+        
+        var body: some MapContent {
+            let size: CGFloat = CGFloat.lerp(a: 12, b: 20, t: t())
+            
+            Annotation(
+                coordinate: coordinate,
+                content: {
+                    RoundedRectangle(cornerRadius: 6)
+                        .rotation(.degrees(45))
+                        .fill(Color.accent)
+                        .strokeBorder(Color.white.opacity(0.75), lineWidth: 1)
+                        .frame(width: size, height: size)
+                        .shadow(color: Color.accent, radius: 8)
+                        .shadow(color: Color.accent.opacity(0.5), radius: 32)
+                },
+                label: {
+                    VStack(alignment: .leading) {
+                        Text("\(location.city), \(location.regionCode), \(location.countryCode)").bold()
+                        Text("\(location.providers) providers")
+                    }
+                }
+            )
+            .mapItemDetailSelectionAccessory(.callout(.full))
+            .tag(MapLocation.provider(location))
+        }
+    }
+    
+    private struct RequestLocationsMapContent: MapContent {
+        let stats: DarkbloomStats
+        
+        var body: some MapContent {
+            let minMaxRequests = stats.requestLocations.minmax(byValue: \.providers)
+            let minRequests = max(0, minMaxRequests?.min ?? 0)
+            let maxRequests = max(1, minMaxRequests?.max ?? 1)
+            
+            ForEach(stats.requestLocations, id: \.key) { location in
+                RequestLocationAnnotation(
+                    minRequests: minRequests,
+                    maxRequests: maxRequests,
+                    location: location
+                )
+            }
+        }
+    }
+    
+    private struct RequestLocationAnnotation: MapContent {
+        let minRequests: Int
+        let maxRequests: Int
+        
+        let location: DarkbloomRequestLocation
+        
+        private var coordinate: CLLocationCoordinate2D {
+            CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        }
+        
+        private func t() -> CGFloat {
+            guard maxRequests > minRequests else { return 0.5 }
+            return CGFloat(location.requests - minRequests) / CGFloat(maxRequests - minRequests)
+        }
+        
+        var body: some MapContent {
+            let size: CGFloat = CGFloat.lerp(a: 8, b: 16, t: t())
+            
+            Annotation(
+                coordinate: coordinate,
+                content: {
+                    Circle()
+                        .fill(Color.green)
+                        .strokeBorder(Color.white.opacity(0.75), lineWidth: 1)
+                        .frame(width: size, height: size)
+                        .shadow(color: Color.green, radius: 8)
+                        .shadow(color: Color.green.opacity(0.5), radius: 32)
+                },
+                label: {
+                    VStack(alignment: .leading) {
+                        Text("\(location.city), \(location.regionCode), \(location.countryCode)").bold()
+                        Text("\(location.providers) requests")
+                    }
+                }
+            )
+            .mapItemDetailSelectionAccessory(.callout(.full))
+            .tag(MapLocation.request(location))
+        }
+    }
+    
+    private struct RequestFlowsMapContent: MapContent {
+        let stats: DarkbloomStats
+        let dashPhase: CGFloat
+        
+        var body: some MapContent {
+            ForEach(stats.requestFlows, id: \.key) { flow in
+                RequestFlowPolyline(flow: flow, dashPhase: dashPhase)
+            }
+        }
+    }
+    
+    private struct RequestFlowPolyline: MapContent {
+        let flow: DarkbloomRequestFlow
+        let dashPhase: CGFloat
+        
+        private var coordinates: [CLLocationCoordinate2D] {
+            [
+                CLLocationCoordinate2D(
+                    latitude: flow.from.latitude,
+                    longitude: flow.from.longitude
+                ),
+                CLLocationCoordinate2D(
+                    latitude: flow.to.latitude,
+                    longitude: flow.to.longitude
+                ),
+            ]
+        }
+        
+        private var directionalColor: Color {
+            switch flow.from.kind {
+                case .provider: Color.green
+                case .consumer: Color.accent
+            }
+        }
+        
+        var body: some MapContent {
+            MapPolyline(coordinates: coordinates, contourStyle: .geodesic)
+                .stroke(
+                    directionalColor,
+                    style: StrokeStyle(
+                        lineWidth: 1,
+                        dash: [2, 10],
+                        dashPhase: dashPhase
+                    )
+                )
         }
     }
 }
