@@ -2,6 +2,25 @@
 
 import Foundation
 
+struct MachineRestartTarget: Codable, Equatable, Identifiable {
+    var id: String { serialNumber }
+
+    let serialNumber: String
+    let displayName: String
+    let user: String
+    let host: String
+
+    var sshRestartArguments: [String] {
+        [
+            "-o", "BatchMode=yes",
+            "-o", "ConnectTimeout=10",
+            "-o", "StrictHostKeyChecking=accept-new",
+            "\(user)@\(host)",
+            "~/.darkbloom/bin/darkbloom stop; sleep 2; ~/.darkbloom/bin/darkbloom start --all"
+        ]
+    }
+}
+
 @MainActor @Observable
 final class LocalServiceController {
     private var launchctlTask: Task<Void, Never>?
@@ -72,6 +91,12 @@ final class LocalServiceController {
         print("Starting darkbloom...")
         let startOutput = try run(path, ["start", "--all"])
         print("-> \(startOutput)")
+    }
+
+    func restartRemoteDarkbloom(target: MachineRestartTarget) throws {
+        print("Restarting darkbloom on \(target.displayName)...")
+        let restartOutput = try run("/usr/bin/ssh", target.sshRestartArguments)
+        print("-> \(restartOutput)")
     }
     
     private func run(_ executable: String, _ arguments: [String]) throws -> String {
