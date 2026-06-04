@@ -10,6 +10,14 @@ struct DarkbloomLogEntry: Equatable, Identifiable {
     let category: String
     let level: OSLogEntryLog.Level
     
+    init(date: Date, message: String, category: String, level: OSLogEntryLog.Level) {
+        self.id = UUID()
+        self.date = date
+        self.message = message
+        self.category = category
+        self.level = level
+    }
+    
     init(from osLogEntry: OSLogEntryLog) {
         self.id = UUID()
         self.date = osLogEntry.date
@@ -94,7 +102,7 @@ final class LocalLogController {
     
     @concurrent private func fetchOlderLogs() async throws -> [OSLogEntryLog] {
         let store = try OSLogStore(scope: .system)
-        let position = store.position(date: Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!)
+        let position = store.position(timeIntervalSinceEnd: -24 * 60 * 60)
         let predicate = NSPredicate(format: "subsystem == %@", subsystem)
         let entries = try store.getEntries(at: position, matching: predicate)
         return entries.compactMap { entry in

@@ -13,8 +13,13 @@ struct LogsTab: View {
                 if viewModel.logs.isEmpty {
                     Text("Waiting for logs to come in...")
                 } else {
-                    ForEach(viewModel.logs.sorted(by: \.date, ascending: false)) { entry in
-                        LogEntryView(entry: entry)
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        IndexedForEach(viewModel.logs.sorted(by: \.date, ascending: false)) { (index, entry) in
+                            if index > 0 {
+                                Divider()
+                            }
+                            LogEntryView(entry: entry)
+                        }
                     }
                 }
             } header: {
